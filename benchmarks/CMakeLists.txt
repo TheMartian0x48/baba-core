@@ -1,9 +1,6 @@
 # Create the benchmark executable
 add_executable(baba_core_benchmarks
-    string_utils_benchmark.cpp
-    file_utils_benchmark.cpp
     logger_benchmark.cpp
-    time_utils_benchmark.cpp
 )
 
 # Link with the baba-core library and Google Benchmark
@@ -16,7 +13,7 @@ target_link_libraries(baba_core_benchmarks
 
 # Set C++ standard for benchmarks
 set_target_properties(baba_core_benchmarks PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
 

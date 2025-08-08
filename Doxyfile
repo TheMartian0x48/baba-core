@@ -1,0 +1,16 @@
+PROJECT_NAME           = "Baba Math Library"
+PROJECT_VERSION        = "1.0.0"
+PROJECT_BRIEF          = "A comprehensive C++ mathematics library"
+OUTPUT_DIRECTORY       = docs/doxygen
+INPUT                  = include/ src/
+RECURSIVE              = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+GENERATE_TREEVIEW      = YES
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_COLORSTYLE        = LIGHT

@@ -4,8 +4,8 @@ set -e
 
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly BUILD_DIR="${PROJECT_ROOT}/build"
-readonly TEST_EXE="tests/baba_core_tests"
-readonly BENCH_EXE="benchmarks/baba_core_benchmarks"
+readonly TEST_EXE="tests/baba_math_tests"
+readonly BENCH_EXE="benchmarks/baba_math_benchmarks"
 readonly EXAMPLE_EXE="examples/basic_usage"
 
 readonly GREEN='\033[0;32m'
@@ -27,10 +27,9 @@ print_warning() {
     echo -e "${YELLOW}Warning:${NC} $1"
 }
 
-
 usage() {
     print_heading "Usage Information"
-    echo "This script manages the build, test, benchmark, and documentation processes for Baba Core Library."
+    echo "This script manages the build, test, benchmark, and documentation processes."
     echo
     echo "Usage: $0 [task]"
     echo
@@ -45,7 +44,9 @@ usage() {
     echo "  benchmark_cache         - Runs all benchmarks using the last successful build."
     echo "  benchmark_filter        - Runs benchmarks with custom filter pattern."
     echo "  examples                - Builds and runs examples."
+    echo "  format                  - Formats code using clang-format."
     echo "  docs                    - Generates documentation with Doxygen."
+    echo "  update_compile_commands - Generates/updates the compile_commands.json file."
     echo "  clean                   - Removes the build directory."
     echo "  help                    - Shows this help message."
     echo
@@ -53,6 +54,11 @@ usage() {
 }
 
 # Executes a target binary if it exists.
+# Arguments:
+#   $1: The path to the executable.
+#   $2: The name of the target (e.g., "Test", "Benchmark").
+#   $3: The heading message to display.
+#   $4: Additional arguments to pass to the executable (optional).
 _execute_if_exists() {
     local exe_path="$1"
     local target_name="$2"
@@ -77,7 +83,7 @@ _execute_if_exists() {
 
 configure_project() {
     print_step "Configuring project with CMake..."
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 }
 
 build_project() {
@@ -96,6 +102,12 @@ do_build() {
     build_project
     popd > /dev/null
 
+    # Copy compile_commands.json to root if it exists
+    if [[ -f "${BUILD_DIR}/compile_commands.json" ]]; then
+        cp "${BUILD_DIR}/compile_commands.json" "${PROJECT_ROOT}/"
+        print_step "compile_commands.json copied to project root"
+    fi
+
     print_heading "Build Finished Successfully"
 }
 
@@ -105,6 +117,13 @@ do_build_cache() {
         pushd "$BUILD_DIR" > /dev/null
         build_project
         popd > /dev/null
+        
+        # Copy compile_commands.json to root if it exists
+        if [[ -f "${BUILD_DIR}/compile_commands.json" ]]; then
+            cp "${BUILD_DIR}/compile_commands.json" "${PROJECT_ROOT}/"
+            print_step "compile_commands.json copied to project root"
+        fi
+        
         print_heading "Cache Build Finished Successfully"
     else
         print_heading "Cache Build Failed"
@@ -133,9 +152,10 @@ run_tests_with_filter() {
     
     echo -e "${CYAN}Enter test filter pattern (Google Test syntax):${NC}"
     echo "Examples:"
-    echo "  *String*           - Run all tests containing 'String'"
-    echo "  FileUtilsTest.*    - Run all tests in FileUtilsTest suite"
-    echo "  *Logger*           - Run all tests containing 'Logger'"
+    echo "  *Vector*           - Run all tests containing 'Vector'"
+    echo "  MatrixTest.*       - Run all tests in MatrixTest suite"
+    echo "  *Addition*         - Run all tests containing 'Addition'"
+    echo "  VectorTest.Add*    - Run specific test patterns"
     echo
     read -p "Filter pattern: " filter_pattern
     
@@ -166,9 +186,10 @@ run_benchmarks_with_filter() {
     
     echo -e "${CYAN}Enter benchmark filter pattern (Google Benchmark syntax):${NC}"
     echo "Examples:"
-    echo "  .*String.*         - Run all benchmarks containing 'String'"
-    echo "  .*File.*           - Run all benchmarks containing 'File'"
-    echo "  BM_StringSplit.*   - Run specific benchmark patterns"
+    echo "  .*Vector.*         - Run all benchmarks containing 'Vector'"
+    echo "  .*Matrix.*         - Run all benchmarks containing 'Matrix'"
+    echo "  BM_VectorAdd.*     - Run specific benchmark patterns"
+    echo "  .*Addition.*       - Run all benchmarks containing 'Addition'"
     echo
     read -p "Filter pattern: " filter_pattern
     
@@ -183,6 +204,7 @@ run_benchmarks_with_filter() {
 run_examples() {
     print_heading "Running Examples"
     
+    # Build if not already built
     if [[ ! -f "$BUILD_DIR/CMakeCache.txt" ]]; then
         print_step "Building project first..."
         do_build
@@ -194,97 +216,106 @@ run_examples() {
     _execute_if_exists "${BUILD_DIR}/${EXAMPLE_EXE}" "Example" "Running Basic Usage Example"
 }
 
+format_code() {
+    print_heading "Formatting Code"
+    
+    if ! command -v clang-format &> /dev/null; then
+        echo -e "${RED}Error: clang-format not found. Please install clang-format.${NC}"
+        exit 1
+    fi
+    
+    print_step "Formatting source files..."
+    
+    # Format source files
+    find src/ -name "*.cpp" -o -name "*.hpp" | while read -r file; do
+        echo "Formatting: $file"
+        clang-format -i "$file"
+    done
+    
+    # Format header files
+    find include/ -name "*.hpp" | while read -r file; do
+        echo "Formatting: $file"
+        clang-format -i "$file"
+    done
+    
+    # Format test files
+    find tests/ -name "*.cpp" | while read -r file; do
+        echo "Formatting: $file"
+        clang-format -i "$file"
+    done
+    
+    # Format benchmark files
+    find benchmarks/ -name "*.cpp" | while read -r file; do
+        echo "Formatting: $file"
+        clang-format -i "$file"
+    done
+    
+    # Format example files
+    find examples/ -name "*.cpp" | while read -r file; do
+        echo "Formatting: $file"
+        clang-format -i "$file"
+    done
+    
+    print_heading "Code Formatting Complete"
+}
+
 generate_docs() {
     print_heading "Generating Documentation with Doxygen"
     
     if ! command -v doxygen &> /dev/null; then
-        echo -e "${RED}Error: Doxygen not found. Please install Doxygen.${NC}"
-        echo "On Ubuntu/Debian: sudo apt-get install doxygen"
-        echo "On macOS: brew install doxygen"
+        echo -e "${RED}Error: Doxygen not found. Please install doxygen.${NC}"
         exit 1
     fi
     
-    print_step "Creating Doxygen configuration..."
+    # Create docs directory
+    mkdir -p docs/doxygen
     
-    # Create docs directory if it doesn't exist
-    mkdir -p docs
-    
-    # Generate Doxyfile if it doesn't exist
+    # Create basic Doxyfile if it doesn't exist
     if [[ ! -f "Doxyfile" ]]; then
-        print_step "Generating Doxyfile..."
-        doxygen -g Doxyfile
-        
-        # Customize the Doxyfile for our project
-        sed -i.bak \
-            -e "s/PROJECT_NAME           = \"My Project\"/PROJECT_NAME           = \"Baba Core Library\"/" \
-            -e "s/PROJECT_NUMBER         =/PROJECT_NUMBER         = 1.0.0/" \
-            -e "s/PROJECT_BRIEF          =/PROJECT_BRIEF          = \"Core utilities library for C++\"/" \
-            -e "s/OUTPUT_DIRECTORY       =/OUTPUT_DIRECTORY       = docs/" \
-            -e "s/INPUT                  =/INPUT                  = include src/" \
-            -e "s/RECURSIVE              = NO/RECURSIVE              = YES/" \
-            -e "s/EXTRACT_ALL            = NO/EXTRACT_ALL            = YES/" \
-            -e "s/EXTRACT_PRIVATE        = NO/EXTRACT_PRIVATE        = YES/" \
-            -e "s/EXTRACT_STATIC         = NO/EXTRACT_STATIC         = YES/" \
-            -e "s/GENERATE_LATEX         = YES/GENERATE_LATEX         = NO/" \
-            -e "s/HAVE_DOT               = NO/HAVE_DOT               = YES/" \
-            -e "s/CALL_GRAPH             = NO/CALL_GRAPH             = YES/" \
-            -e "s/CALLER_GRAPH           = NO/CALLER_GRAPH           = YES/" \
-            Doxyfile
-        
-        # Remove backup file
-        rm -f Doxyfile.bak
-        
-        print_step "Doxyfile created and configured"
-    else
-        print_step "Using existing Doxyfile"
+        print_step "Creating basic Doxyfile..."
+        cat > Doxyfile << EOF
+PROJECT_NAME           = "Baba Math Library"
+PROJECT_VERSION        = "1.0.0"
+PROJECT_BRIEF          = "A comprehensive C++ mathematics library"
+OUTPUT_DIRECTORY       = docs/doxygen
+INPUT                  = include/ src/
+RECURSIVE              = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+GENERATE_TREEVIEW      = YES
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_COLORSTYLE        = LIGHT
+EOF
     fi
     
     print_step "Running Doxygen..."
     doxygen Doxyfile
     
-    if [[ -f "docs/html/index.html" ]]; then
-        print_heading "Documentation Generated Successfully"
-        echo -e "${GREEN}Documentation available at: docs/html/index.html${NC}"
-        echo -e "${GREEN}Open with: open docs/html/index.html${NC}"
-    else
-        print_heading "Documentation Generation Failed"
-        echo -e "${RED}Error: Documentation generation failed${NC}"
-        exit 1
-    fi
+    print_step "Documentation generated in docs/doxygen/html/"
+    print_heading "Doxygen Documentation Complete"
 }
 
-
-handle_task() {
-    case $1 in
-        configure_project)      configure_only ;;
-        build)                  do_build ;;
-        build_cache)            do_build_cache ;;
-        test)                   do_test ;;
-        test_cache)             run_tests_cache ;;
-        test_filter)            run_tests_with_filter ;;
-        benchmark)              run_benchmarks ;;
-        benchmark_cache)        run_benchmarks_cache ;;
-        benchmark_filter)       run_benchmarks_with_filter ;;
-        examples)               run_examples ;;
-        docs)                   generate_docs ;;
-        clean)                  do_clean ;;
-        help)                   usage ;;
-        *)
-            echo -e "${RED}Unknown task: $1${NC}"
-            usage
-            exit 1
-            ;;
-    esac
-}
-
-configure_only() {
-    print_heading "Configure Only"
-    rm -rf "$BUILD_DIR"
+update_compile_commands() {
+    print_heading "Updating compile_commands.json"
     mkdir -p "$BUILD_DIR"
     pushd "$BUILD_DIR" > /dev/null
-    configure_project
+    print_step "Generating compile commands with CMake..."
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     popd > /dev/null
-    print_heading "Configure Finished"
+
+    if [[ -f "${BUILD_DIR}/compile_commands.json" ]]; then
+        cp "${BUILD_DIR}/compile_commands.json" "${PROJECT_ROOT}/"
+        print_step "compile_commands.json has been updated in the project root."
+    else
+        echo -e "${RED}Error: Failed to generate compile_commands.json.${NC}"
+        exit 1
+    fi
+    print_heading "Update Complete"
 }
 
 do_clean() {
@@ -304,8 +335,48 @@ do_clean() {
         rm -f Doxyfile
     fi
     
+    if [[ -f "Doxyfile.xml" ]]; then
+        print_step "Removing Doxyfile.xml"
+        rm -f Doxyfile.xml
+    fi
+    
     print_step "Clean complete."
     print_heading "Clean Finished"
+}
+
+configure_only() {
+    print_heading "Configure Only"
+    rm -rf "$BUILD_DIR"
+    mkdir -p "$BUILD_DIR"
+    pushd "$BUILD_DIR" > /dev/null
+    configure_project
+    popd > /dev/null
+    print_heading "Configure Finished"
+}
+
+handle_task() {
+    case $1 in
+        configure_project)      configure_only ;;
+        build)                  do_build ;;
+        build_cache)            do_build_cache ;;
+        test)                   do_test ;;
+        test_cache)             run_tests_cache ;;
+        test_filter)            run_tests_with_filter ;;
+        benchmark)              run_benchmarks ;;
+        benchmark_cache)        run_benchmarks_cache ;;
+        benchmark_filter)       run_benchmarks_with_filter ;;
+        examples)               run_examples ;;
+        format)                 format_code ;;
+        docs)                   generate_docs ;;
+        update_compile_commands) update_compile_commands ;;
+        clean)                  do_clean ;;
+        help)                   usage ;;
+        *)
+            echo -e "${RED}Unknown task: $1${NC}"
+            usage
+            exit 1
+            ;;
+    esac
 }
 
 choose_task() {
@@ -321,7 +392,9 @@ choose_task() {
         "benchmark_cache" 
         "benchmark_filter"
         "examples"
+        "format"
         "docs"
+        "update_compile_commands" 
         "clean" 
         "help" 
         "quit"
@@ -354,3 +427,4 @@ main() {
 }
 
 main "$@"
+

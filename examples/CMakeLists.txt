@@ -1,11 +1,6 @@
 # List of all example executables
 set(EXAMPLES
-    basic_usage
-    string_utils_example
-    file_utils_example
-    time_utils_example
     logger_example
-    integration_example
 )
 
 # Create executables for all examples
@@ -17,7 +12,7 @@ foreach(EXAMPLE ${EXAMPLES})
     
     # Set C++ standard for the example
     set_target_properties(${EXAMPLE} PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
     )
 endforeach()

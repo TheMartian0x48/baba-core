@@ -1,10 +1,6 @@
 # Create the test executable
 add_executable(baba_core_tests
-    string_utils_test.cpp
-    file_utils_test.cpp
     logger_test.cpp
-    time_utils_test.cpp
-    core_integration_test.cpp
 )
 
 # Link with the baba-core library and Google Test
@@ -19,7 +15,7 @@ target_link_libraries(baba_core_tests
 
 # Set C++ standard for tests
 set_target_properties(baba_core_tests PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
 
