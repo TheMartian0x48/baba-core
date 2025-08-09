@@ -1,193 +1,153 @@
 # Baba Core Library
 
-A comprehensive C++ core utilities library providing essential functionality for string manipulation, file I/O, logging, and time operations.
+A modern C++ core utilities library providing high-performance data structures, logging, and memory management utilities.
 
 ## Features
 
-### 🔤 String Utilities
-- String trimming, splitting, and joining
-- Case conversion (upper/lower)
-- Pattern matching (starts_with, ends_with, contains)
-- String replacement and formatting
+### 🧠 Core Utilities (`baba::core`)
+- Aligned memory allocation and management
+- Custom allocators for performance-critical applications
 
-### 📁 File Utilities
-- File and directory operations
-- Path manipulation
-- File reading/writing (text and binary)
-- Directory listing and traversal
+### 📝 Logging Framework (`baba::logger`)
+- Modern C++20 logging with lambda-based lazy evaluation
+- Asynchronous and synchronous logging modes
+- Multiple log levels (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
+- Thread-safe operations with performance metrics
 
-### 📝 Logging Framework
-- Multiple log levels (DEBUG, INFO, WARN, ERROR)
-- Console and file output
-- Thread-safe logging
-- Formatted logging support
-
-### ⏰ Time Utilities
-- Current timestamp operations
-- Time formatting and parsing
-- Duration calculations
-- Benchmark timers (Timer, ScopedTimer)
+### 🗂️ Data Structures (`baba::ds`)
+- **Aligned String**: High-performance string with configurable memory alignment
+- **Stack**: Template-based aligned stack implementation
+- **Queue**: Template-based aligned circular queue implementation
 
 ## Quick Start
 
 ### Building the Library
 
 ```bash
-# Configure and build
-./build.sh build
+# Create build directory and configure
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# Build the library
+make -j4
 
 # Run tests
-./build.sh test
+./tests/baba_core_tests
 
-# Run benchmarks
-./build.sh benchmark
-
-# Run examples
-./build.sh examples
+# Run example
+./examples/logger_example
 ```
 
 ### Basic Usage
 
 ```cpp
-#include <baba/core.hpp>
+#include <baba/baba.hpp>
 
 int main() {
-    // String utilities
-    auto parts = baba::core::string_utils::split("hello,world", ",");
-    std::string upper = baba::core::string_utils::to_upper("hello");
-    
-    // File utilities
-    baba::core::file_utils::write_file("test.txt", "Hello World");
-    std::string content = baba::core::file_utils::read_file("test.txt");
-    
     // Logging
-    baba::core::Logger::info("Application started");
-    baba::core::Logger::error("Something went wrong");
+    baba::logger::info([]() { return "Application started"; });
+    baba::logger::error([]() { return "Something went wrong"; });
     
-    // Time utilities
-    auto timer = baba::core::time_utils::Timer();
-    // ... do some work ...
-    auto elapsed = timer.elapsed_seconds();
+    // Data structures
+    baba::ds::string str("Hello");
+    str += " World!";
+    
+    baba::ds::stack<int> stack;
+    stack.push(42);
+    
+    baba::ds::queue<std::string> queue;
+    queue.push("message");
+    
+    // Core utilities
+    void* aligned_ptr = baba::core::aligned_alloc(64, 16);
+    baba::core::aligned_free(aligned_ptr);
     
     return 0;
 }
 ```
 
-## Build System
+## Project Structure
 
-The library uses CMake and includes:
-- **Google Test** for unit testing
-- **Google Benchmark** for performance testing
-- **Doxygen/Sphinx** support for documentation
-
-### Available Build Tasks
-
-| Task | Description |
-|------|-------------|
-| `build` | Clean build in Release mode |
-| `build_cache` | Incremental build |
-| `test` | Run all unit tests |
-| `test_filter` | Run filtered tests |
-| `benchmark` | Run all benchmarks |
-| `benchmark_filter` | Run filtered benchmarks |
-| `examples` | Build and run examples |
-| `format` | Format code with clang-format |
-| `docs` | Generate documentation |
-| `clean` | Clean build artifacts |
+```
+include/baba/
+├── baba.hpp           # Master header (includes everything)
+├── core.hpp           # Core utilities
+├── logger.hpp         # Logging functionality  
+├── ds.hpp             # Data structures
+├── core/              # Core implementation headers
+├── logger/            # Logger implementation headers
+└── ds/                # Data structure implementation headers
+```
 
 ## Requirements
 
-- **C++17** or later
+- **C++20** or later
 - **CMake 3.14** or later
-- **GCC/Clang** with C++17 support
+- **GCC 10** or later (configured to use `/home/adityaku/dev/tool/gcc/10/bin/g++`)
 
 ## Installation
 
+### System-wide Installation
+
 ```bash
-# Build and install system-wide
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+make -j4
 sudo make install
 ```
 
-## Using in Your Project
+### Using in Your Project
 
-### CMake Integration
+#### CMake Integration
 
 ```cmake
 find_package(baba-core REQUIRED)
 target_link_libraries(your_target baba-core::baba-core)
 ```
 
-### Manual Integration
+#### As Subdirectory
 
 ```cmake
 add_subdirectory(path/to/baba-core)
 target_link_libraries(your_target baba-core)
 ```
 
-## Documentation
+## Namespace Organization
 
-Generate documentation with:
+The library is organized into three main namespaces:
+
+- **`baba::core`**: Low-level utilities (memory management, system interfaces)
+- **`baba::logger`**: Dedicated logging subsystem  
+- **`baba::ds`**: High-performance data structures
+
+This design provides clear separation of concerns and intuitive organization.
+
+## Examples
+
+See the `examples/` directory for complete usage examples demonstrating all three namespaces working together.
+
+## Testing
+
+The library includes comprehensive tests using Google Test:
 
 ```bash
-# Auto-detect and generate docs
-./build.sh docs
-
-# Generate with Doxygen
-./build.sh docs_doxygen
-
-# Generate with Sphinx
-./build.sh docs_sphinx
+cd build
+make -j4
+./tests/baba_core_tests
 ```
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite: `./build.sh test`
-6. Submit a pull request
+3. Make your changes with appropriate tests
+4. Ensure all tests pass: `make && ./tests/baba_core_tests`
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## Version
 
 Current version: **1.0.0**
-
-## API Reference
-
-### String Utils (`baba::core::string_utils`)
-- `trim()`, `ltrim()`, `rtrim()` - String trimming
-- `split()`, `join()` - String splitting and joining
-- `to_upper()`, `to_lower()` - Case conversion
-- `starts_with()`, `ends_with()`, `contains()` - Pattern matching
-- `replace_all()` - String replacement
-- `format()` - String formatting
-
-### File Utils (`baba::core::file_utils`)
-- `read_file()`, `write_file()` - File I/O
-- `file_exists()`, `directory_exists()` - Existence checks
-- `create_directory()`, `remove_file()` - File operations
-- `list_files()`, `list_directories()` - Directory listing
-- `get_extension()`, `get_filename()` - Path utilities
-
-### Logger (`baba::core::Logger`)
-- `debug()`, `info()`, `warn()`, `error()` - Logging methods
-- `set_level()`, `set_console_output()` - Configuration
-- `set_file_output()` - File logging
-- Template methods for formatted logging
-
-### Time Utils (`baba::core::time_utils`)
-- `now()`, `now_millis()` - Current time
-- `format_time()`, `parse_iso_date()` - Time formatting
-- `Timer`, `ScopedTimer` - Benchmark timers
-- `sleep_millis()`, `sleep_seconds()` - Sleep functions
-
-
-
-

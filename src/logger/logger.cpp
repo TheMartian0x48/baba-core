@@ -3,7 +3,7 @@
  * @brief Implementation of the C++20 logging framework
  */
 
-#include "baba/logger.hpp"
+#include "baba/logger/logger.hpp"
 
 #include <sys/resource.h>
 #include <unistd.h>
@@ -22,7 +22,7 @@
 #include <sstream>
 #include <thread>
 
-namespace baba::core::logger {
+namespace baba::logger {
 
 struct LogEntry;
 class AsyncLogger;
@@ -519,4 +519,4 @@ void internal_log_impl(const Logger *logger,
     }
 }
 
-} // namespace baba::core::logger
+} // namespace baba::logger

@@ -1,11 +1,19 @@
 # Language and Standard
 Language: Cpp
 Standard: c++20
-
 BasedOnStyle: LLvm
-IndentWidth: 4
-ColumnLimit: 100
+
 AlignAfterOpenBracket: DontAlign
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: false
+# BreakTemplateDeclarations: Yes
 BinPackParameters: OnePerLine
+BreakAfterAttributes: Always
+ColumnLimit: 100
+IndentWidth: 4
+PointerAlignment: Left
+ReflowComments: false
+
+
+BreakBeforeBraces: Linux
+

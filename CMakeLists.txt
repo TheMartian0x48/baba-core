@@ -1,10 +1,30 @@
 cmake_minimum_required(VERSION 3.14)
 
+# Set specific GCC 10 compilers
+set(CMAKE_C_COMPILER "/home/adityaku/dev/tool/gcc/10/bin/gcc")
+set(CMAKE_CXX_COMPILER "/home/adityaku/dev/tool/gcc/10/bin/g++")
+
+# Set library paths for GCC 10
+set(GCC10_LIB_PATH "/home/adityaku/dev/tool/gcc/10/lib64")
+link_directories(${GCC10_LIB_PATH})
+
+# Set runtime library path to ensure the correct libstdc++ is used
+set(CMAKE_BUILD_RPATH ${GCC10_LIB_PATH})
+set(CMAKE_INSTALL_RPATH ${GCC10_LIB_PATH})
+set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 project(baba-core
     VERSION 1.0.0
     DESCRIPTION "A comprehensive C++ core utilities library"
     LANGUAGES CXX
 )
+
+# Display compiler information
+message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
+message(STATUS "Using C++ compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "C++ compiler ID: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "C++ compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
