@@ -94,13 +94,18 @@ struct Array {
     
     // Properties
     [[nodiscard]] constexpr bool empty() const noexcept;
-    // direct access to size
-    [[nodiscard]] constexpr u32 size() const noexcept;
-    // direct access to data
-    [[nodiscard]] constexpr T* data() noexcept;
-    [[nodiscard]] constexpr const T* data() const noexcept;
-    [[nodiscard]] constexpr T front(u32 index) const requires PrimitiveComparable<T>;
-    [[nodiscard]] constexpr T end(u32 index) const requires PrimitiveComparable<T>;
+    [[nodiscard]] constexpr u32 get_size() const noexcept;
+    [[nodiscard]] constexpr T* get_data() const noexcept;
+    
+    // Element access
+    [[nodiscard]] constexpr T& at(u32 index);
+    [[nodiscard]] constexpr const T& at(u32 index) const;
+    [[nodiscard]] constexpr T& at_safe(u32 index);
+    [[nodiscard]] constexpr const T& at_safe(u32 index) const;
+    [[nodiscard]] constexpr T& front();
+    [[nodiscard]] constexpr const T& front() const;
+    [[nodiscard]] constexpr T& back();
+    [[nodiscard]] constexpr const T& back() const;
     
     // Modification
     constexpr void update(u32 index, const T& value);
@@ -299,54 +304,56 @@ i32 adult_pos = people.find_if([](const Person& p) {
 ### Struct Methods (50+ functions)
 
 #### Properties
-- [x] `bool empty() const noexcept` (implemented as `is_empty`)
-- [ ] `u32 size() const noexcept`
-- [ ] `T* data() noexcept`
-- [ ] `const T* data() const noexcept`
+- [x] `bool empty() const noexcept`
+- [x] `u32 get_size() const noexcept`
+- [x] `T* get_data() const noexcept`
 
 #### Element Access
-- [x] `T& at(u32 index)` (implemented as `get_at`)
-- [x] `T& at_safe(u32 index)`
-- [x] `T& front()`
-- [x] `T& back()`
+- [x] `T at(u32 index) const noexcept`
+- [x] `T at_safe(u32 index) const`
+- [x] `T front() const noexcept`
+- [x] `T front_safe() const`
+- [x] `T back() const noexcept`
+- [x] `T back_safe() const`
 
 #### Modification
-- [x] `void update(u32 index, const T& value)`
-- [x] `void update_safe(u32 index, const T& value)`
-- [ ] `void clear() noexcept`
-- [x] `void append(const T& value)`
-- [x] `void remove_at(u32 index)`
-- [x] `void fill(const T& value)`
-- [x] `void fill_range(u32 start, u32 end, const T& value)`
+- [x] `void update(i32 index, const T& value)` / `void update(i32 index, const T* value)`
+- [x] `void update_safe(i32 index, const T& value)` / `void update_safe(i32 index, const T* value)`
+- [ ] `void clear() noexcept` (stub implementation)
+- [x] `void append(const T& value)` / `void append(const T* value)`
+- [x] `void append_safe(const T& value)` / `void append_safe(const T* value)`
+- [x] `void remove(u32 index)` / `void remove_safe(u32 index)`
+- [x] `void fill(const T& value)` / `void fill(const T* value)`
+- [x] `void fill_range(u32 start, u32 end, const T& value)` / `void fill_range_safe(...)`
 
 #### Search (Primitive + Non-primitive overloads)
-- [ ] `i32 find(const T& value)` / `i32 find(const T& value, EqualFn equals)`
-- [ ] `i32 rfind(const T& value)` / `i32 rfind(const T& value, EqualFn equals)`
-- [ ] `bool contains(const T& value)` / `bool contains(const T& value, EqualFn equals)`
-- [ ] `u32 count(const T& value)` / `u32 count(const T& value, EqualFn equals)`
+- [x] `i32 find(T x)` / `i32 find(T* x, EqualFn equals)`
+- [x] `i32 find_reverse(T x)` / `i32 find_reverse(T* x, EqualFn equals)`
+- [x] `bool contains(T x)` / `bool contains(T* x, EqualFn equals)`
+- [x] `i32 counts(T x)` / `i32 counts(T* x, EqualFn equals)`
 - [ ] `Array<u32> find_all(const T& value)` / `Array<u32> find_all(const T& value, EqualFn equals)`
 - [ ] `Array<u32> rfind_all(const T& value)` / `Array<u32> rfind_all(const T& value, EqualFn equals)`
 - [ ] `i32 find_if(Predicate pred)`
 
 #### Comparisons (Primitive + Non-primitive overloads)
-- [ ] `bool equals(const Array<T>& other)` / `bool equals(const Array<T>& other, EqualFn equals)`
-- [ ] `i32 compare(const Array<T>& other)` / `i32 compare(const Array<T>& other, CompareFn compare)`
-- [ ] `bool less_than(const Array<T>& other)` / `bool less_than(const Array<T>& other, CompareFn compare)`
-- [ ] `bool greater_than(const Array<T>& other)` / `bool greater_than(const Array<T>& other, CompareFn compare)`
+- [x] `bool equals(const Array<T>* other)` / `bool equals(const Array<T>* other, EqualFn equals)`
+- [x] `int compare(const Array<T>* other)` / `int compare(const Array<T>* other, CompareFn compare)`
+- [x] `bool less_than(const Array<T>* other)` / `bool less_than(const Array<T>* other, LessThanFn compare)`
+- [x] `bool greater_than(const Array<T>* other)` / `bool greater_than(const Array<T>* other, GreaterThanFn compare)`
 
 #### Pattern Matching (Primitive + Non-primitive overloads)
-- [ ] `bool starts_with(const Array<T>& prefix)` / `bool starts_with(const Array<T>& prefix, EqualFn equals)`
-- [ ] `bool ends_with(const Array<T>& suffix)` / `bool ends_with(const Array<T>& suffix, EqualFn equals)`
+- [x] `bool starts_with(const Array<T>* other)` / `bool starts_with(const Array<T>* other, EqualFn equals)`
+- [x] `bool ends_with(const Array<T>* other)` / `bool ends_with(const Array<T>* other, EqualFn equals)`
 
 #### Queries (Primitive + Non-primitive overloads)
-- [ ] `bool is_sorted()` / `bool is_sorted(CompareFn compare)`
-- [ ] `bool is_sorted_reverse()` / `bool is_sorted_reverse(CompareFn compare)`
-- [ ] `bool is_sorted_until(u32 index)` / `bool is_sorted_until(u32 index, CompareFn compare)`
-- [ ] `bool is_sorted_reverse_until(u32 index)` / `bool is_sorted_reverse_until(u32 index, CompareFn compare)`
+- [x] `bool sorted()` / `bool sorted(GreaterThanFn compare)`
+- [x] `bool sorted_reverse()` / `bool sorted_reverse(GreaterThanFn compare)`
+- [x] `bool sorted_range(u32 start, u32 end)` / `bool sorted_range(u32 start, u32 end, GreaterThanFn compare)`
+- [x] `bool sorted_range_reverse(u32 start, u32 end)` / `bool sorted_range_reverse(u32 start, u32 end, GreaterThanFn compare)`
 
 ### Implementation Progress
-**Completed**: 2/67+ functions (3%)  
-**Remaining**: 65+ functions (97%)
+**Completed**: 35/67+ functions (52%)  
+**Remaining**: 32+ functions (48%)
 
 ### Priority Order
 1. **Phase 1 (Core)**: 9 functions - Essential for basic functionality
