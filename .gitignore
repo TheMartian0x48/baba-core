@@ -110,9 +110,6 @@ coverage/
 *.prof
 gmon.out
 
-# Core dumps
-core
-core.*
 
 # Temporary files
 *.tmp

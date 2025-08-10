@@ -20,10 +20,10 @@ using namespace baba::alias;
  * @tparam T Element type
  */
 template <typename T> struct Array {
-    core::Arena* arena; ///< Arena allocator (initialized by `make()`)
-    T* data;            ///< Pointer to array data
-    u32 size;           ///< Current number of elements
-    u32 capacity;       ///< Maximum number of elements
+    core::Arena* arena;    ///< Arena allocator (initialized by `make()`)
+    T*           data;     ///< Pointer to array data
+    u32          size;     ///< Current number of elements
+    u32          capacity; ///< Maximum number of elements
 
     /**
      * @brief Check if array is empty

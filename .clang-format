@@ -16,4 +16,13 @@ ReflowComments: false
 
 
 BreakBeforeBraces: Linux
+AllowShortEnumsOnASingleLine:  false
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+  AlignFunctionDeclarations: true
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
 
