@@ -151,13 +151,59 @@ namespace baba::memory
     // PROXY ARENA IMPLEMENTATION
     // ============================================================================
 
-    void* proxy_arena_init(std::size_t capacity) { return nullptr; }
-    void* proxy_arena_alloc(void* arena_instance, std::size_t size) { return std::malloc(size); }
-    void  proxy_arena_free(void* arena_instance, void* ptr) { std::free(ptr); }
-    void  proxy_arena_get_stats(void* arena_instance, ArenaStats* stats) {}
-    bool  proxy_arena_can_alloc(void* arena_instance, std::size_t size) {}
-    void  proxy_arena_reset(void* arena_instance) {}
-    void  proxy_arena_destroy(void* arena_instance) {}
+    void* proxy_arena_init(std::size_t capacity)
+    {
+        // Capacity is ignored - proxy delegates to malloc which has no fixed capacity
+        // Return a non-null sentinel value to indicate successful "initialization"
+        return reinterpret_cast<void*>(0x1);
+    }
+
+    void* proxy_arena_alloc(void* arena_instance, std::size_t size)
+    {
+        // Direct delegation to malloc - arena_instance is ignored
+        return std::malloc(size);
+    }
+
+    void proxy_arena_free(void* arena_instance, void* ptr)
+    {
+        // Direct delegation to free - arena_instance is ignored
+        std::free(ptr);
+    }
+
+    void proxy_arena_get_stats(void* arena_instance, ArenaStats* stats)
+    {
+        if (stats == nullptr) {
+            return;
+        }
+        
+        // Proxy arena has no meaningful stats since it delegates to malloc
+        stats->total_capacity = SIZE_MAX;      // Unlimited capacity
+        stats->used_bytes = 0;                 // Unknown - malloc doesn't track this
+        stats->free_bytes = SIZE_MAX;          // Unlimited
+        stats->allocation_count = 0;           // Unknown - no tracking
+        stats->free_count = 0;                 // Unknown - no tracking
+        stats->fragmentation_ratio = 0;        // Unknown - malloc handles this
+        stats->largest_free_block = SIZE_MAX;  // Unknown - depends on system
+    }
+
+    bool proxy_arena_can_alloc(void* arena_instance, std::size_t size)
+    {
+        // Proxy arena can always attempt allocation (depends on system memory)
+        // arena_instance and size are ignored - malloc will determine if allocation succeeds
+        return true;
+    }
+
+    void proxy_arena_reset(void* arena_instance)
+    {
+        // No-op - cannot reset malloc allocations
+        // This is a limitation of the proxy pattern
+    }
+
+    void proxy_arena_destroy(void* arena_instance)
+    {
+        // No-op - nothing to destroy since we don't allocate any arena state
+        // Individual allocations made through proxy_arena_alloc must be freed separately
+    }
 
     // ============================================================================
     // STACK ARENA IMPLEMENTATION
@@ -202,7 +248,7 @@ namespace baba::memory
         return user_ptr;
     }
 
-    void stack_arena_free(void* arena_instance, const void* ptr)
+    void stack_arena_free(void* arena_instance, void* ptr)
     {
         if (ptr == nullptr) {
             return;
@@ -270,7 +316,7 @@ namespace baba::memory
         stats->largest_free_block  = arena->capacity - arena->offset;
     }
 
-    inline bool stack_arena_can_alloc(void* arena_instance, std::size_t size)
+    bool stack_arena_can_alloc(void* arena_instance, std::size_t size)
     {
         const auto arena = static_cast<StackArena*>(arena_instance);
         return arena->offset + size + sizeof(StackAllocationMetaData) <= arena->capacity;
@@ -482,63 +528,77 @@ namespace baba::memory
     Arena create_proxy_arena()
     {
         return Arena{
-            .init      = proxy_arena_init,
-            .reset     = nullptr,
+            .init = proxy_arena_init,
+            .alloc = proxy_arena_alloc,
+            .realloc = nullptr,
+            .reset = proxy_arena_reset,
+            .free = proxy_arena_free,
+            .destroy = proxy_arena_destroy,
+            .aligned_alloc = nullptr,
+            .get_stats = proxy_arena_get_stats,
+            .can_alloc = proxy_arena_can_alloc,
             .type_name = ArenaConstant::PROXY_ARENA_TYPE,
-            .free      = proxy_arena_free,
-            .realloc   = nullptr, // Proxy arena doesn't support realloc
+            .min_alignment = 1,
+            .supports_individual_free = true,
+            .supports_realloc = false
         };
     }
 
     Arena create_linear_arena()
     {
-        return Arena{.init            = linear_arena_init,
-            .alloc                    = linear_arena_alloc,
-            .reset                    = linear_arena_reset,
-            .destroy                  = linear_arena_destroy,
-            .free                     = nullptr, // Linear arena doesn't support individual free
-            .realloc                  = nullptr, // Linear arena doesn't support realloc
-            .aligned_alloc            = linear_arena_aligned_alloc,
-            .get_stats                = linear_arena_get_stats,
-            .can_alloc                = linear_arena_can_alloc,
-            .type_name                = "LINEAR",
-            .min_alignment            = 1,
+        return Arena{
+            .init = linear_arena_init,
+            .alloc = linear_arena_alloc,
+            .realloc = nullptr,
+            .reset = linear_arena_reset,
+            .free = nullptr,
+            .destroy = linear_arena_destroy,
+            .aligned_alloc = linear_arena_aligned_alloc,
+            .get_stats = linear_arena_get_stats,
+            .can_alloc = linear_arena_can_alloc,
+            .type_name = "LINEAR",
+            .min_alignment = 1,
             .supports_individual_free = false,
-            .supports_realloc         = false};
+            .supports_realloc = false
+        };
     }
 
     Arena create_stack_arena()
     {
-        return Arena{.init            = stack_arena_init,
-            .alloc                    = stack_arena_alloc,
-            .reset                    = stack_arena_reset,
-            .destroy                  = stack_arena_destroy,
-            .free                     = stack_arena_free, // Stack arena supports LIFO free
-            .realloc                  = nullptr,          // Stack arena doesn't support realloc
-            .aligned_alloc            = nullptr,          // Not implemented yet
-            .get_stats                = stack_arena_get_stats,
-            .can_alloc                = stack_arena_can_alloc,
-            .type_name                = "STACK",
-            .min_alignment            = 1,
-            .supports_individual_free = true, // LIFO only
-            .supports_realloc         = false};
+        return Arena{
+            .init = stack_arena_init,
+            .alloc = stack_arena_alloc,
+            .realloc = nullptr,
+            .reset = stack_arena_reset,
+            .free = stack_arena_free,
+            .destroy = stack_arena_destroy,
+            .aligned_alloc = nullptr,
+            .get_stats = stack_arena_get_stats,
+            .can_alloc = stack_arena_can_alloc,
+            .type_name = "STACK",
+            .min_alignment = 1,
+            .supports_individual_free = true,
+            .supports_realloc = false
+        };
     }
 
     Arena create_pool_arena()
     {
-        return Arena{.init            = nullptr, // Pool arena needs block_size parameter
-            .alloc                    = pool_arena_alloc,
-            .reset                    = pool_arena_reset,
-            .destroy                  = pool_arena_destroy,
-            .free                     = pool_arena_free, // Pool arena supports individual free
-            .realloc                  = nullptr,         // Pool arena doesn't support realloc
-            .aligned_alloc            = nullptr,         // Not implemented yet
-            .get_stats                = pool_arena_get_stats,
-            .can_alloc                = pool_arena_can_alloc,
-            .type_name                = "POOL",
-            .min_alignment            = sizeof(PoolBlock),
+        return Arena{
+            .init = nullptr, // Pool arena needs block_size parameter
+            .alloc = pool_arena_alloc,
+            .realloc = nullptr,
+            .reset = pool_arena_reset,
+            .free = pool_arena_free,
+            .destroy = pool_arena_destroy,
+            .aligned_alloc = nullptr,
+            .get_stats = pool_arena_get_stats,
+            .can_alloc = pool_arena_can_alloc,
+            .type_name = "POOL",
+            .min_alignment = sizeof(PoolBlock),
             .supports_individual_free = true,
-            .supports_realloc         = false};
+            .supports_realloc = false
+        };
     }
 
     // Generic factory function

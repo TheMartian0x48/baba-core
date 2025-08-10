@@ -126,9 +126,9 @@ namespace baba::memory
         inline const char* SLAB_ARENA_TYPE         = "SLAB";
         inline const char* STACK_ARENA_TYPE        = "STACK";
         inline const char* UNKNOWN_ARENA_TYPE      = "UNKNOWN";
-        constexpr uint32_t STACK_ALLOC_START_MAGIC = 0xDEADBEEF;
-        constexpr uint32_t STACK_ALLOC_END_MAGIC   = 0xCAFEBABE;
-        constexpr uint32_t FREED_MAGIC             = 0xDEADDEAD;
+        constexpr std::size_t STACK_ALLOC_START_MAGIC = 0xDEADBEEFCAFEBABE;
+        constexpr std::size_t STACK_ALLOC_END_MAGIC   = 0xBABECAFEDEADBEEF;
+        constexpr std::size_t FREED_MAGIC             = 0xDEADDEADDEADDEAD;
     } // namespace ArenaConstant
 
     enum class ArenaType {
@@ -259,6 +259,7 @@ namespace baba::memory
     // ============================================================================
 
     struct ProxyArena {
+        // Empty - stateless proxy that delegates to malloc/free
     };
 
     void* proxy_arena_init(std::size_t capacity);
@@ -427,7 +428,7 @@ namespace baba::memory
 
     inline bool is_valid_arena_type(ArenaType type)
     {
-        return type >= ArenaType::LINEAR && type <= ArenaType::HYBRID;
+        return type >= ArenaType::BUDDY && type <= ArenaType::STACK;
     }
 
     Arena create_linear_arena();
