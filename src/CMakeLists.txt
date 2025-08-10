@@ -1,7 +1,7 @@
 # Add source files to the library target
 target_sources(baba-core
     PRIVATE
-        core/memory.cpp
+        memory/memory.cpp
         logger/logger.cpp
 )
 

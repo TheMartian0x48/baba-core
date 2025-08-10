@@ -14,7 +14,6 @@ IndentWidth: 4
 PointerAlignment: Left
 ReflowComments: false
 
-
 BreakBeforeBraces: Linux
 AllowShortEnumsOnASingleLine:  false
 AlignConsecutiveDeclarations:
@@ -26,3 +25,4 @@ AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: true
 
+NamespaceIndentation: All

@@ -9,7 +9,8 @@
 #include "queue.hpp"
 #include "stack.hpp"
 
-namespace baba::ds {
-// Data structures namespace
-// Contains high-performance aligned data structures
-}
+namespace baba::ds
+{
+    // Data structures namespace
+    // Contains high-performance aligned data structures
+} // namespace baba::ds
