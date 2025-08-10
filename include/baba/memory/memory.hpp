@@ -116,15 +116,18 @@ namespace baba::memory
 
     namespace ArenaConstant
     {
-        inline const char* LINEAR_ARENA_TYPE      = "LINEAR";
-        inline const char* STACK_ARENA_TYPE       = "STACK";
-        inline const char* POOL_ARENA_TYPE        = "POOL";
-        inline const char* FREE_LIST_ARENA_TYPE   = "FREE";
-        inline const char* RING_BUFFER_ARENA_TYPE = "RING";
-        inline const char* SLAB_ARENA_TYPE        = "SLAB";
-        inline const char* BUDDY_ARENA_TYPE       = "BUDDY";
-        inline const char* HYBRID_ARENA_TYPE      = "HYBRID";
-        inline const char* UNKNOWN_ARENA_TYPE     = "UNKNOWN";
+        inline const char* LINEAR_ARENA_TYPE       = "LINEAR";
+        inline const char* STACK_ARENA_TYPE        = "STACK";
+        inline const char* POOL_ARENA_TYPE         = "POOL";
+        inline const char* FREE_LIST_ARENA_TYPE    = "FREE";
+        inline const char* RING_BUFFER_ARENA_TYPE  = "RING";
+        inline const char* SLAB_ARENA_TYPE         = "SLAB";
+        inline const char* BUDDY_ARENA_TYPE        = "BUDDY";
+        inline const char* HYBRID_ARENA_TYPE       = "HYBRID";
+        inline const char* UNKNOWN_ARENA_TYPE      = "UNKNOWN";
+        constexpr uint32_t STACK_ALLOC_START_MAGIC = 0xDEADBEEF;
+        constexpr uint32_t STACK_ALLOC_END_MAGIC   = 0xCAFEBABE;
+        constexpr uint32_t FREED_MAGIC             = 0xDEADDEAD;
     } // namespace ArenaConstant
 
     enum class ArenaType {
@@ -271,35 +274,58 @@ namespace baba::memory
     void  linear_arena_destroy(void* arena_instance);
 
     // ============================================================================
-    // STACK ARENA IMPLEMENTATION
+    // STACK ARENA INLINE IMPLEMENTATION
     // ============================================================================
 
-    struct StackAllocation {
+    struct StackAllocationMetaData {
+        std::size_t magic_start;
         std::size_t size;
         std::size_t offset; // For validation during free
+        std::size_t magic_end;
     };
 
     struct StackArena {
-        char*            buffer;
-        std::size_t      capacity;
-        std::size_t      offset;
-        StackAllocation* allocation_stack; // Track allocations for LIFO free
-        std::size_t      allocation_count;
-        std::size_t      max_allocations;
-        std::size_t      total_allocations; // Statistics
-        std::size_t      total_frees;
+        char*       buffer;
+        std::size_t capacity;
+        std::size_t offset;
+        std::size_t allocation_count;
+        std::size_t total_allocations; // Statistics
+        std::size_t total_frees;
     };
 
     void* stack_arena_init(std::size_t capacity);
-    void* stack_arena_init_with_max_allocs(std::size_t capacity, std::size_t max_allocations);
-    inline void* stack_arena_init(std::size_t capacity);
-    void* stack_arena_init_with_max_allocs(std::size_t capacity, std::size_t max_allocations);
     void* stack_arena_alloc(void* arena_instance, std::size_t size);
-    void  stack_arena_free(void* arena_instance, const void* ptr);
-    void  stack_arena_get_stats(void* arena_instance, ArenaStats* stats);
-    bool  stack_arena_can_alloc(void* arena_instance, std::size_t size);
+    void  stack_arena_free(void* arena_instance, void* ptr);
     void  stack_arena_reset(void* arena_instance);
     void  stack_arena_destroy(void* arena_instance);
+    void  stack_arena_get_stats(void* arena_instance, ArenaStats* stats);
+    bool  stack_arena_can_alloc(void* arena_instance, std::size_t size);
+
+    // ============================================================================
+    // STACK ARENA IMPLEMENTATION
+    // ============================================================================
+
+    // struct StackArenaWithMetaData {
+    //     char*                    buffer;
+    //     std::size_t              capacity;
+    //     std::size_t              offset;
+    //     StackAllocationMetaData* allocation_stack; // Track allocations for LIFO free
+    //     std::size_t              allocation_count;
+    //     std::size_t              max_allocations;
+    //     std::size_t              total_allocations; // Statistics
+    //     std::size_t              total_frees;
+    // };
+    //
+    // void* stack_arena_init(std::size_t capacity);
+    // void* stack_arena_init_with_max_allocs(std::size_t capacity, std::size_t max_allocations);
+    // inline void* stack_arena_init(std::size_t capacity);
+    // void* stack_arena_init_with_max_allocs(std::size_t capacity, std::size_t max_allocations);
+    // void* stack_arena_alloc(void* arena_instance, std::size_t size);
+    // void  stack_arena_free(void* arena_instance, const void* ptr);
+    // void  stack_arena_get_stats(void* arena_instance, ArenaStats* stats);
+    // bool  stack_arena_can_alloc(void* arena_instance, std::size_t size);
+    // void  stack_arena_reset(void* arena_instance);
+    // void  stack_arena_destroy(void* arena_instance);
 
     // ============================================================================
     // POOL ARENA

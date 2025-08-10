@@ -72,7 +72,7 @@ namespace baba::memory
 
     void* linear_arena_init(std::size_t capacity)
     {
-        LinearArena* arena = static_cast<LinearArena*>(std::malloc(sizeof(LinearArena)));
+        const auto arena = static_cast<LinearArena*>(std::malloc(sizeof(LinearArena)));
         if (arena == nullptr) {
             return nullptr;
         }
@@ -89,11 +89,11 @@ namespace baba::memory
 
     void* linear_arena_alloc(void* arena_instance, std::size_t size)
     {
-        LinearArena* arena = static_cast<LinearArena*>(arena_instance);
+        const auto arena = static_cast<LinearArena*>(arena_instance);
         if (arena->offset + size > arena->capacity) {
             return nullptr;
         }
-        void* ptr = static_cast<void*>(arena->buffer + arena->offset);
+        const auto ptr = static_cast<void*>(arena->buffer + arena->offset);
         arena->offset += size;
         arena->total_allocations++;
         return ptr;
@@ -101,7 +101,7 @@ namespace baba::memory
 
     void* linear_arena_aligned_alloc(void* arena_instance, std::size_t size, std::size_t alignment)
     {
-        LinearArena* arena = static_cast<LinearArena*>(arena_instance);
+        const auto arena = static_cast<LinearArena*>(arena_instance);
 
         // Calculate aligned offset
         std::size_t aligned_offset = (arena->offset + alignment - 1) & ~(alignment - 1);
@@ -110,15 +110,15 @@ namespace baba::memory
             return nullptr;
         }
 
-        void* ptr     = static_cast<void*>(arena->buffer + aligned_offset);
-        arena->offset = aligned_offset + size;
+        const auto ptr = static_cast<void*>(arena->buffer + aligned_offset);
+        arena->offset  = aligned_offset + size;
         arena->total_allocations++;
         return ptr;
     }
 
     void linear_arena_get_stats(void* arena_instance, ArenaStats* stats)
     {
-        LinearArena* arena         = static_cast<LinearArena*>(arena_instance);
+        const auto arena           = static_cast<LinearArena*>(arena_instance);
         stats->total_capacity      = arena->capacity;
         stats->used_bytes          = arena->offset;
         stats->free_bytes          = arena->capacity - arena->offset;
@@ -130,23 +130,139 @@ namespace baba::memory
 
     bool linear_arena_can_alloc(void* arena_instance, std::size_t size)
     {
-        LinearArena* arena = static_cast<LinearArena*>(arena_instance);
+        const auto arena = static_cast<LinearArena*>(arena_instance);
         return arena->offset + size <= arena->capacity;
     }
 
     void linear_arena_reset(void* arena_instance)
     {
-        LinearArena* arena = static_cast<LinearArena*>(arena_instance);
-        arena->offset      = 0;
+        const auto arena = static_cast<LinearArena*>(arena_instance);
+        arena->offset    = 0;
     }
 
     void linear_arena_destroy(void* arena_instance)
     {
-        LinearArena* arena = static_cast<LinearArena*>(arena_instance);
+        const auto arena = static_cast<LinearArena*>(arena_instance);
         std::free(arena->buffer);
         std::free(arena);
     }
 
+    // ============================================================================
+    // STACK ARENA IMPLEMENTATION
+    // ============================================================================
+
+    void* stack_arena_init(std::size_t capacity)
+    {
+        const auto arena = static_cast<StackArena*>(std::malloc(sizeof(StackArena)));
+        if (arena == nullptr) {
+            return nullptr;
+        }
+        arena->buffer = static_cast<char*>(std::malloc(capacity));
+        if (arena->buffer == nullptr) {
+            std::free(arena);
+            return nullptr;
+        }
+        arena->capacity          = capacity;
+        arena->offset            = 0;
+        arena->allocation_count  = 0;
+        arena->total_frees       = 0;
+        arena->total_allocations = 0;
+        return arena;
+    }
+
+    void* stack_arena_alloc(void* arena_instance, std::size_t size)
+    {
+        const auto arena      = static_cast<StackArena*>(arena_instance);
+        const auto total_size = size + sizeof(StackAllocationMetaData);
+        if (arena->offset + total_size > arena->capacity) {
+            return nullptr;
+        }
+        const auto meta = reinterpret_cast<StackAllocationMetaData*>(arena->buffer + arena->offset);
+        meta->magic_start = ArenaConstant::STACK_ALLOC_START_MAGIC;
+        meta->offset      = arena->offset;
+        meta->size        = size;
+        meta->magic_end   = ArenaConstant::STACK_ALLOC_END_MAGIC;
+
+        void* user_ptr    = arena->buffer + arena->offset + sizeof(StackAllocationMetaData);
+        arena->offset += total_size;
+        arena->allocation_count++;
+        arena->total_allocations++;
+        return user_ptr;
+    }
+
+    void stack_arena_free(void* arena_instance, const void* ptr)
+    {
+        if (ptr == nullptr) {
+            return;
+        }
+        const auto arena    = static_cast<StackArena*>(arena_instance);
+        const auto user_ptr = static_cast<const char*>(ptr);
+        if (user_ptr < arena->buffer || user_ptr >= arena->buffer + arena->capacity) {
+            return;
+        }
+
+        auto metadata = reinterpret_cast<StackAllocationMetaData*>(
+            const_cast<char*>(user_ptr - sizeof(StackAllocationMetaData)));
+
+        if (metadata->magic_start != ArenaConstant::STACK_ALLOC_START_MAGIC ||
+            metadata->magic_end != ArenaConstant::STACK_ALLOC_END_MAGIC) {
+            // corrupted data
+            return;
+        }
+
+        if (arena->offset != metadata->offset + metadata->size + sizeof(StackAllocationMetaData)) {
+            // not recent stack element
+            return;
+        }
+        metadata->magic_start = ArenaConstant::FREED_MAGIC;
+        metadata->magic_end   = ArenaConstant::FREED_MAGIC;
+        arena->offset         = metadata->offset;
+        arena->allocation_count--;
+        arena->total_frees++;
+    }
+
+    void stack_arena_reset(void* arena_instance)
+    {
+        const auto arena         = static_cast<StackArena*>(arena_instance);
+        arena->offset            = 0;
+        arena->allocation_count  = 0;
+        arena->total_allocations = 0;
+        arena->total_frees       = 0;
+    }
+
+    void stack_arena_destroy(void* arena_instance)
+    {
+        if (arena_instance == nullptr) {
+            return;
+        }
+        const auto arena = static_cast<StackArena*>(arena_instance);
+        if (arena->buffer != nullptr) {
+            std::free(arena->buffer);
+        }
+        std::free(arena);
+    }
+
+    void stack_arena_get_stats(void* arena_instance, ArenaStats* stats)
+    {
+        if (arena_instance == nullptr || stats == nullptr) {
+            return;
+        }
+
+        StackArena* arena          = static_cast<StackArena*>(arena_instance);
+        stats->total_capacity      = arena->capacity;
+        stats->used_bytes          = arena->offset;
+        stats->free_bytes          = arena->capacity - arena->offset;
+        stats->allocation_count    = arena->total_allocations;
+        stats->free_count          = arena->total_frees;
+        stats->fragmentation_ratio = 0;
+        stats->largest_free_block  = arena->capacity - arena->offset;
+    }
+
+    inline bool stack_arena_can_alloc(void* arena_instance, std::size_t size)
+    {
+        const auto arena = static_cast<StackArena*>(arena_instance);
+        return arena->offset + size + sizeof(StackAllocationMetaData) <= arena->capacity;
+    }
     // ============================================================================
     // POOL ARENA IMPLEMENTATION
     // ============================================================================
@@ -157,7 +273,7 @@ namespace baba::memory
             block_size = sizeof(PoolBlock);
         }
 
-        PoolArena* arena = static_cast<PoolArena*>(std::malloc(sizeof(PoolArena)));
+        const auto arena = static_cast<PoolArena*>(std::malloc(sizeof(PoolArena)));
         if (arena == nullptr) {
             return nullptr;
         }
@@ -177,7 +293,7 @@ namespace baba::memory
 
         arena->free_list_head    = nullptr;
         for (std::size_t i = 0; i < arena->block_count; ++i) {
-            PoolBlock* block      = reinterpret_cast<PoolBlock*>(arena->buffer + i * block_size);
+            const auto block      = reinterpret_cast<PoolBlock*>(arena->buffer + i * block_size);
             block->next           = arena->free_list_head;
             arena->free_list_head = block;
         }
@@ -196,7 +312,7 @@ namespace baba::memory
 */
     void* pool_arena_alloc(void* arena_instance, std::size_t size)
     {
-        PoolArena* arena = static_cast<PoolArena*>(arena_instance);
+        const auto arena = static_cast<PoolArena*>(arena_instance);
 
         if (size > arena->block_size || arena->free_list_head == nullptr) {
             return nullptr;
