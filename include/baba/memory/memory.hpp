@@ -116,14 +116,15 @@ namespace baba::memory
 
     namespace ArenaConstant
     {
-        inline const char* LINEAR_ARENA_TYPE       = "LINEAR";
-        inline const char* STACK_ARENA_TYPE        = "STACK";
-        inline const char* POOL_ARENA_TYPE         = "POOL";
+        inline const char* BUDDY_ARENA_TYPE        = "BUDDY";
         inline const char* FREE_LIST_ARENA_TYPE    = "FREE";
+        inline const char* HYBRID_ARENA_TYPE       = "HYBRID";
+        inline const char* LINEAR_ARENA_TYPE       = "LINEAR";
+        inline const char* POOL_ARENA_TYPE         = "POOL";
+        inline const char* PROXY_ARENA_TYPE        = "PROXY";
         inline const char* RING_BUFFER_ARENA_TYPE  = "RING";
         inline const char* SLAB_ARENA_TYPE         = "SLAB";
-        inline const char* BUDDY_ARENA_TYPE        = "BUDDY";
-        inline const char* HYBRID_ARENA_TYPE       = "HYBRID";
+        inline const char* STACK_ARENA_TYPE        = "STACK";
         inline const char* UNKNOWN_ARENA_TYPE      = "UNKNOWN";
         constexpr uint32_t STACK_ALLOC_START_MAGIC = 0xDEADBEEF;
         constexpr uint32_t STACK_ALLOC_END_MAGIC   = 0xCAFEBABE;
@@ -131,25 +132,24 @@ namespace baba::memory
     } // namespace ArenaConstant
 
     enum class ArenaType {
-        LINEAR,
-        STACK,
-        POOL,
+        BUDDY,
         FREE_LIST,
+        HYBRID,
+        LINEAR,
+        POOL,
+        PROXY,
         RING_BUFFER,
         SLAB,
-        BUDDY,
-        HYBRID
+        STACK,
     };
 
     struct Arena {
-        ArenaInitFn    init;
-        ArenaAllocFn   alloc;
-        ArenaResetFn   reset;
-        ArenaDestroyFn destroy;
-
-        // set to nullptr if not supported
-        ArenaFreeFn         free;          // Individual deallocation
+        ArenaInitFn         init;          // Initialize arena instance
+        ArenaAllocFn        alloc;         // Allocate memory from the arena
         ArenaReallocFn      realloc;       // Resize allocation
+        ArenaResetFn        reset;         // Reset the arena to initial state
+        ArenaFreeFn         free;          // Individual deallocation
+        ArenaDestroyFn      destroy;       // Destroy the arena and free resources
         ArenaAlignedAllocFn aligned_alloc; // Aligned allocation
         ArenaGetStatsFn     get_stats;     // Memory usage statistics
         ArenaCanAllocFn     can_alloc;     // Check if allocation possible
@@ -253,6 +253,21 @@ namespace baba::memory
         std::size_t  total_allocations;
         std::size_t  total_frees;
     };
+
+    // ============================================================================
+    // PROXY ARENA
+    // ============================================================================
+
+    struct ProxyArena {
+    };
+
+    void* proxy_arena_init(std::size_t capacity);
+    void* proxy_arena_alloc(void* arena_instance, std::size_t size);
+    void  proxy_arena_free(void* arena_instance, void* ptr);
+    void  proxy_arena_get_stats(void* arena_instance, ArenaStats* stats);
+    bool  proxy_arena_can_alloc(void* arena_instance, std::size_t size);
+    void  proxy_arena_reset(void* arena_instance);
+    void  proxy_arena_destroy(void* arena_instance);
 
     // ============================================================================
     // LINEAR ARENA

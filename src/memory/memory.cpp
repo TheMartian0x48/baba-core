@@ -148,6 +148,18 @@ namespace baba::memory
     }
 
     // ============================================================================
+    // PROXY ARENA IMPLEMENTATION
+    // ============================================================================
+
+    void* proxy_arena_init(std::size_t capacity) { return nullptr; }
+    void* proxy_arena_alloc(void* arena_instance, std::size_t size) { return std::malloc(size); }
+    void  proxy_arena_free(void* arena_instance, void* ptr) { std::free(ptr); }
+    void  proxy_arena_get_stats(void* arena_instance, ArenaStats* stats) {}
+    bool  proxy_arena_can_alloc(void* arena_instance, std::size_t size) {}
+    void  proxy_arena_reset(void* arena_instance) {}
+    void  proxy_arena_destroy(void* arena_instance) {}
+
+    // ============================================================================
     // STACK ARENA IMPLEMENTATION
     // ============================================================================
 
@@ -421,22 +433,24 @@ namespace baba::memory
     const char* arena_type_to_string(ArenaType type)
     {
         switch (type) {
-        case ArenaType::LINEAR:
-            return ArenaConstant::LINEAR_ARENA_TYPE;
-        case ArenaType::STACK:
-            return ArenaConstant::STACK_ARENA_TYPE;
-        case ArenaType::POOL:
-            return ArenaConstant::POOL_ARENA_TYPE;
+        case ArenaType::BUDDY:
+            return ArenaConstant::BUDDY_ARENA_TYPE;
         case ArenaType::FREE_LIST:
             return ArenaConstant::FREE_LIST_ARENA_TYPE;
+        case ArenaType::HYBRID:
+            return ArenaConstant::HYBRID_ARENA_TYPE;
+        case ArenaType::LINEAR:
+            return ArenaConstant::LINEAR_ARENA_TYPE;
+        case ArenaType::POOL:
+            return ArenaConstant::POOL_ARENA_TYPE;
+        case ArenaType::PROXY:
+            return ArenaConstant::PROXY_ARENA_TYPE;
         case ArenaType::RING_BUFFER:
             return ArenaConstant::RING_BUFFER_ARENA_TYPE;
         case ArenaType::SLAB:
             return ArenaConstant::SLAB_ARENA_TYPE;
-        case ArenaType::BUDDY:
-            return ArenaConstant::BUDDY_ARENA_TYPE;
-        case ArenaType::HYBRID:
-            return ArenaConstant::HYBRID_ARENA_TYPE;
+        case ArenaType::STACK:
+            return ArenaConstant::STACK_ARENA_TYPE;
         default:
             return ArenaConstant::UNKNOWN_ARENA_TYPE;
         }
@@ -444,23 +458,36 @@ namespace baba::memory
 
     ArenaType string_to_arena_type(const char* type_name)
     {
-        if (std::strcmp(type_name, ArenaConstant::LINEAR_ARENA_TYPE) == 0)
-            return ArenaType::LINEAR;
-        if (std::strcmp(type_name, ArenaConstant::STACK_ARENA_TYPE) == 0)
-            return ArenaType::STACK;
-        if (std::strcmp(type_name, ArenaConstant::POOL_ARENA_TYPE) == 0)
-            return ArenaType::POOL;
+        if (std::strcmp(type_name, ArenaConstant::BUDDY_ARENA_TYPE) == 0)
+            return ArenaType::BUDDY;
         if (std::strcmp(type_name, ArenaConstant::FREE_LIST_ARENA_TYPE) == 0)
             return ArenaType::FREE_LIST;
+        if (std::strcmp(type_name, ArenaConstant::HYBRID_ARENA_TYPE) == 0)
+            return ArenaType::HYBRID;
+        if (std::strcmp(type_name, ArenaConstant::LINEAR_ARENA_TYPE) == 0)
+            return ArenaType::LINEAR;
+        if (std::strcmp(type_name, ArenaConstant::POOL_ARENA_TYPE) == 0)
+            return ArenaType::POOL;
+        if (std::strcmp(type_name, ArenaConstant::PROXY_ARENA_TYPE) == 0)
+            return ArenaType::PROXY;
         if (std::strcmp(type_name, ArenaConstant::RING_BUFFER_ARENA_TYPE) == 0)
             return ArenaType::RING_BUFFER;
         if (std::strcmp(type_name, ArenaConstant::SLAB_ARENA_TYPE) == 0)
             return ArenaType::SLAB;
-        if (std::strcmp(type_name, ArenaConstant::BUDDY_ARENA_TYPE) == 0)
-            return ArenaType::BUDDY;
-        if (std::strcmp(type_name, ArenaConstant::HYBRID_ARENA_TYPE) == 0)
-            return ArenaType::HYBRID;
+        if (std::strcmp(type_name, ArenaConstant::STACK_ARENA_TYPE) == 0)
+            return ArenaType::STACK;
         return ArenaType::LINEAR; // Default fallback
+    }
+
+    Arena create_proxy_arena()
+    {
+        return Arena{
+            .init      = proxy_arena_init,
+            .reset     = nullptr,
+            .type_name = ArenaConstant::PROXY_ARENA_TYPE,
+            .free      = proxy_arena_free,
+            .realloc   = nullptr, // Proxy arena doesn't support realloc
+        };
     }
 
     Arena create_linear_arena()
