@@ -7,85 +7,9 @@
 
 #include <cstddef>
 #include <cstring>
-#include <new>
 
 namespace baba::memory
 {
-
-    // ============================================================================
-    // LOW-LEVEL ALIGNED MEMORY UTILITIES
-    // ============================================================================
-
-    /**
- * @brief Allocate aligned memory
- * @param size Size in bytes to allocate
- * @param alignment Alignment requirement (must be power of 2)
- * @return Pointer to aligned memory or nullptr on failure
- */
-    void* aligned_alloc(size_t size, size_t alignment = 16);
-
-    /**
- * @brief Free aligned memory allocated with aligned_alloc
- * @param ptr Pointer to free (can be nullptr)
- */
-    void aligned_free(void* ptr);
-
-    /**
- * @brief Check if a pointer is aligned to the specified boundary
- * @param ptr Pointer to check
- * @param alignment Alignment boundary
- * @return true if aligned, false otherwise
- */
-    bool is_aligned(const void* ptr, size_t alignment);
-
-    /**
- * @brief Aligned allocator for STL containers
- * @tparam T Type to allocate
- * @tparam Alignment Alignment requirement (default 16 bytes)
- */
-    template <typename T, size_t Alignment = 16> class aligned_allocator
-    {
-      public:
-        using value_type      = T;
-        using pointer         = T*;
-        using const_pointer   = const T*;
-        using reference       = T&;
-        using const_reference = const T&;
-        using size_type       = size_t;
-        using difference_type = ptrdiff_t;
-
-        template <typename U> struct rebind {
-            using other = aligned_allocator<U, Alignment>;
-        };
-
-        aligned_allocator() noexcept = default;
-
-        template <typename U> aligned_allocator(const aligned_allocator<U, Alignment>&) noexcept {}
-
-        pointer allocate(size_type n)
-        {
-            if (n == 0)
-                return nullptr;
-
-            void* ptr = aligned_alloc(n * sizeof(T), Alignment);
-            if (!ptr) {
-                throw std::bad_alloc();
-            }
-            return static_cast<pointer>(ptr);
-        }
-
-        void                       deallocate(pointer p, size_type) noexcept { aligned_free(p); }
-
-        template <typename U> bool operator==(const aligned_allocator<U, Alignment>&) const noexcept
-        {
-            return true;
-        }
-
-        template <typename U> bool operator!=(const aligned_allocator<U, Alignment>&) const noexcept
-        {
-            return false;
-        }
-    };
 
     // ============================================================================
     // ARENA ALLOCATION SYSTEM
@@ -450,6 +374,7 @@ namespace baba::memory
         return type >= ArenaType::BUDDY && type <= ArenaType::STACK;
     }
 
+    Arena create_proxy_arena();
     Arena create_linear_arena();
     Arena create_stack_arena();
     Arena create_pool_arena();

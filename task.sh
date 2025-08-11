@@ -4,9 +4,9 @@ set -e
 
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly BUILD_DIR="${PROJECT_ROOT}/build"
-readonly TEST_EXE="tests/baba_math_tests"
-readonly BENCH_EXE="benchmarks/baba_math_benchmarks"
-readonly EXAMPLE_EXE="examples/basic_usage"
+readonly TEST_EXE="tests/baba_core_tests"
+readonly BENCH_EXE="benchmarks/baba_core_benchmarks"
+readonly EXAMPLE_EXE="examples/logger_example"
 
 readonly GREEN='\033[0;32m'
 readonly RED='\033[0;31m'
@@ -139,23 +139,33 @@ do_test() {
 }
 
 run_tests_cache() {
-    _execute_if_exists "${BUILD_DIR}/${TEST_EXE}" "Test" "Running Tests (from cache)"
+    print_heading "Running Tests (from cache)"
+    if [[ -f "$BUILD_DIR/CMakeCache.txt" ]]; then
+        pushd "$BUILD_DIR" > /dev/null
+        GTEST_COLOR=1 ctest --output-on-failure --progress --verbose
+        popd > /dev/null
+        print_heading "Test run finished"
+    else
+        print_heading "Test executable not found"
+        echo "Please build the project first by running: $0 build"
+        print_heading "Test run aborted"
+        exit 1
+    fi
 }
 
 run_tests_with_filter() {
     print_heading "Running Tests with Filter"
     
-    if [[ ! -f "${BUILD_DIR}/${TEST_EXE}" ]]; then
-        echo -e "${RED}Error: Test executable not found. Please build first.${NC}"
+    if [[ ! -f "$BUILD_DIR/CMakeCache.txt" ]]; then
+        echo -e "${RED}Error: Build directory not configured. Please build first.${NC}"
         exit 1
     fi
     
-    echo -e "${CYAN}Enter test filter pattern (Google Test syntax):${NC}"
+    echo -e "${CYAN}Enter test filter pattern (CTest syntax):${NC}"
     echo "Examples:"
-    echo "  *Vector*           - Run all tests containing 'Vector'"
-    echo "  MatrixTest.*       - Run all tests in MatrixTest suite"
-    echo "  *Addition*         - Run all tests containing 'Addition'"
-    echo "  VectorTest.Add*    - Run specific test patterns"
+    echo "  ArrayTests         - Run tests matching 'ArrayTests'"
+    echo "  Array*             - Run all tests starting with 'Array'"
+    echo "  *Test*             - Run all tests containing 'Test'"
     echo
     read -p "Filter pattern: " filter_pattern
     
@@ -164,7 +174,11 @@ run_tests_with_filter() {
         exit 1
     fi
     
-    _execute_if_exists "${BUILD_DIR}/${TEST_EXE}" "Filtered Test" "Running Tests with Filter: $filter_pattern" "--gtest_filter=$filter_pattern"
+    print_heading "Running Tests with Filter: $filter_pattern"
+    pushd "$BUILD_DIR" > /dev/null
+    GTEST_COLOR=1 ctest --verbose -R "$filter_pattern"
+    popd > /dev/null
+    print_heading "Filtered test run finished"
 }
 
 run_benchmarks() {
@@ -274,9 +288,9 @@ generate_docs() {
     if [[ ! -f "Doxyfile" ]]; then
         print_step "Creating basic Doxyfile..."
         cat > Doxyfile << EOF
-PROJECT_NAME           = "Baba Math Library"
+PROJECT_NAME           = "Baba Core Library"
 PROJECT_VERSION        = "1.0.0"
-PROJECT_BRIEF          = "A comprehensive C++ mathematics library"
+PROJECT_BRIEF          = "A comprehensive C++ core utilities library"
 OUTPUT_DIRECTORY       = docs/doxygen
 INPUT                  = include/ src/
 RECURSIVE              = YES
@@ -427,4 +441,3 @@ main() {
 }
 
 main "$@"
-

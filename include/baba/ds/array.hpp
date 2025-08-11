@@ -6,6 +6,7 @@
  * @brief Dynamic array implementation with arena allocation
  */
 
+#include "baba/ds/pair.hpp"
 #include "baba/memory/memory.hpp"
 #include <baba/alias.hpp>
 #include <baba/memory.hpp>
@@ -127,7 +128,7 @@ namespace baba::ds::array
         * @return First element
         */
         [[nodiscard]]
-        constexpr T front() const noexcept
+        constexpr T begin() const noexcept
             requires PrimitiveComparable<T>
         {
             return data[0];
@@ -138,7 +139,7 @@ namespace baba::ds::array
      * @return First element
      */
         [[nodiscard]]
-        constexpr T front() const noexcept
+        constexpr T begin() const noexcept
             requires(!PrimitiveComparable<T>)
         {
             return data[0];
@@ -150,11 +151,11 @@ namespace baba::ds::array
      * @throw `std::out_of_range` if array is empty
      */
         [[nodiscard]]
-        constexpr T front_safe() const
+        constexpr T begin_safe() const
             requires PrimitiveComparable<T>
         {
             if (size == 0) {
-                throw std::out_of_range("Array is empty, cannot access front element.");
+                throw std::out_of_range("Array is empty, cannot access begin element.");
             }
             return data[0];
         }
@@ -165,11 +166,11 @@ namespace baba::ds::array
      * @throw `std::out_of_range` if array is empty
      */
         [[nodiscard]]
-        constexpr T front_safe() const
+        constexpr T begin_safe() const
             requires(!PrimitiveComparable<T>)
         {
             if (size == 0) {
-                throw std::out_of_range("Array is empty, cannot access front element.");
+                throw std::out_of_range("Array is empty, cannot access begin element.");
             }
             return data[0];
         }
@@ -179,7 +180,7 @@ namespace baba::ds::array
      * @return Last element
      */
         [[nodiscard]]
-        constexpr T back() const noexcept
+        constexpr T end() const noexcept
             requires PrimitiveComparable<T>
         {
             return data[size - 1];
@@ -190,7 +191,7 @@ namespace baba::ds::array
      * @return Last element
      */
         [[nodiscard]]
-        constexpr T back() const noexcept
+        constexpr T end() const noexcept
             requires(!PrimitiveComparable<T>)
         {
             return data[size - 1];
@@ -202,11 +203,11 @@ namespace baba::ds::array
      * @throw `std::out_of_range` if array is empty
      */
         [[nodiscard]]
-        constexpr T back_safe() const
+        constexpr T end_safe() const
             requires PrimitiveComparable<T>
         {
             if (size == 0) {
-                throw std::out_of_range("Array is empty, cannot access back element.");
+                throw std::out_of_range("Array is empty, cannot access end element.");
             }
             return data[size - 1];
         }
@@ -217,11 +218,11 @@ namespace baba::ds::array
      * @throw `std::out_of_range` if array is empty
      */
         [[nodiscard]]
-        constexpr T back_safe() const
+        constexpr T end_safe() const
             requires(!PrimitiveComparable<T>)
         {
             if (size == 0) {
-                throw std::out_of_range("Array is empty, cannot access back element.");
+                throw std::out_of_range("Array is empty, cannot access end element.");
             }
             return data[size - 1];
         }
@@ -230,10 +231,7 @@ namespace baba::ds::array
      * @brief Clear all elements
      * @note Not implemented yet
      */
-        constexpr void clear() noexcept
-        {
-            throw std::runtime_error("clear() is not implemented yet.");
-        }
+        constexpr void clear() { throw std::runtime_error("clear() is not implemented yet."); }
 
         /**
      * @brief Append element (unsafe)
@@ -1021,30 +1019,30 @@ namespace baba::ds::array
     */
     template <typename T> Array<T> make(baba::memory::Arena* arena, u32 size)
     {
-        void* ptr = memory::arena_alloc(arena, size);
+        void* ptr = memory::arena_alloc(arena, size * sizeof(T));
         if (ptr == nullptr) {
-            return std::runtime_error("failed to allocate memory");
+            throw std::runtime_error("failed to allocate memory");
         }
         return Array<T>{
-            .arena    = arena,
-            .size     = size,
-            .capacity = size,
-            .data     = static_cast<T*>(ptr),
+            arena,
+            static_cast<T*>(ptr),
+            size,
+            size,
         };
     }
 
     template <typename T>
     Array<T> make_with_capacity(baba::memory::Arena* arena, u32 size, u32 capacity)
     {
-        void* ptr = memory::arena_alloc(arena, capacity);
+        void* ptr = memory::arena_alloc(arena, capacity * sizeof(T));
         if (ptr == nullptr) {
-            return std::runtime_error("failed to allocate memory");
+            throw std::runtime_error("failed to allocate memory");
         }
         return Array<T>{
-            .arena    = arena,
-            .size     = size,
-            .capacity = capacity,
-            .data     = static_cast<T*>(ptr),
+            arena,
+            static_cast<T*>(ptr),
+            size,
+            capacity,
         };
     }
 
@@ -1064,17 +1062,17 @@ namespace baba::ds::array
 
     template <typename T> Array<T> copy(baba::memory::Arena* arena, const Array<T>* source)
     {
-        void* ptr = memory::arena_alloc(source->size);
+        void* ptr = memory::arena_alloc(arena, source->size * sizeof(T));
         if (ptr == nullptr) {
-            return std::runtime_error("failed to allocate memory");
+            throw std::runtime_error("failed to allocate memory");
         }
         Array<T> arr = {
-            .size     = source->size,
-            .capacity = source->size,
-            .arena    = arena,
-            .data     = static_cast<T*>(ptr),
+            arena,
+            static_cast<T*>(ptr),
+            source->size,
+            source->size,
         };
-        for (int i = 0; i < arr.size; i++) {
+        for (u32 i = 0; i < arr.size; i++) {
             arr.data[i] = source->data[i];
         }
         return arr;
@@ -1085,67 +1083,95 @@ namespace baba::ds::array
     {
         u32   a_size{a->size}, b_size{b->size};
         u32   size{a_size + b_size};
-        void* ptr{memory::arena_alloc(arena, size)};
+        void* ptr{memory::arena_alloc(arena, size * sizeof(T))};
         if (ptr == nullptr) {
-            return std::runtime_error("failed to allocate memory");
+            throw std::runtime_error("failed to allocate memory");
         }
         Array<T> arr = {
-            .size     = size,
-            .capacity = size,
-            .arena    = arena,
-            .data     = static_cast<T*>(ptr),
+            arena,
+            static_cast<T*>(ptr),
+            size,
+            size,
         };
         for (u32 i = 0; i < a_size; i++) {
             arr.data[i] = a->data[i];
         }
         for (u32 i = 0; i < b_size; i++) {
-            arr.data[i + b_size] = b->data[i];
+            arr.data[i + a_size] = b->data[i];
         }
         return arr;
     }
 
-    template <typename T>
-    void split(const Array<T>* arr, u32 index, Array<T>* left, Array<T>* right)
+    template <typename T> ds::Pair<Array<T>, Array<T>> split(const Array<T>* arr, u32 index)
     {
         if (index > arr->size) {
-            std::out_of_range("index is out of range");
+            throw std::out_of_range("index is out of range");
         }
-        u32   size{arr->size};
-        void* ptr{memory::arena_alloc(arr->arena, size)};
-        if (ptr == nullptr) {
-            std::runtime_error("failed to allocate memory");
+        u32  size{arr->size};
+        u32  left_size{index + 1}, right_size{size - index - 1};
+        auto left_ptr  = static_cast<T*>(memory::arena_alloc(arr->arena, left_size * sizeof(T)));
+        auto right_ptr = static_cast<T*>(memory::arena_alloc(arr->arena, right_size * sizeof(T)));
+        if (left_ptr == nullptr || right_ptr == nullptr) {
+            memory::arena_free(arr->arena, left_ptr);
+            memory::arena_free(arr->arena, right_ptr);
+            throw std::runtime_error("Failed to allocate memory");
         }
-        for (u32 i = 0; i < a_size; i++) {
-            arr.data[i] = a->data[i];
+        Array<T> left = {
+            arr->arena,
+            static_cast<T*>(left_ptr),
+            left_size,
+            left_size,
+        };
+        for (u32 i = 0; i <= index; i++) {
+            left.data[i] = arr->at(i);
         }
-        for (u32 i = 0; i < b_size; i++) {
-            arr.data[i + b_size] = b->data[i];
+        Array<T> right = {
+            arr->arena,
+            static_cast<T*>(right_ptr),
+            right_size,
+            right_size,
+        };
+        for (u32 i = index + 1; i < size; i++) {
+            right.data[i - index - 1] = arr->at(i);
         }
-        return arr;
+        return {left, right};
     }
 
-    template <typename T> void swap(Array<T>& a, Array<T>& b) noexcept
+    template <typename T> void swap(Array<T>* a, Array<T>* b) noexcept
     {
-        throw std::runtime_error("swap() is not implemented yet.");
+        auto size     = a->size;
+        auto capacity = a->capacity;
+        auto arena    = a->arena;
+        auto data     = a->data;
+
+        a->size       = b->size;
+        a->capacity   = b->capacity;
+        a->arena      = b->arena;
+        a->data       = b->data;
+
+        b->size       = size;
+        b->capacity   = capacity;
+        b->arena      = arena;
+        b->data       = data;
     }
 
-    template <typename T> void sort(Array<T>& arr)
-    {
-        throw std::runtime_error("sort() is not implemented yet.");
-    }
-
-    template <typename T> bool binary_search(const Array<T>& arr, const T& value)
-    {
-        throw std::runtime_error("binary_search() is not implemented yet.");
-    }
-    template <typename T> u32 lower_bound(const Array<T>& arr, const T& value)
-    {
-        throw std::runtime_error("lower_bound() is not implemented yet.");
-    }
-    template <typename T> u32 upper_bound(const Array<T>& arr, const T& value)
-    {
-        throw std::runtime_error("upper_bound() is not implemented yet.");
-    }
+    // template <typename T> void sort(Array<T>& arr)
+    // {
+    //     throw std::runtime_error("sort() is not implemented yet.");
+    // }
+    //
+    // template <typename T> bool binary_search(const Array<T>& arr, const T& value)
+    // {
+    //     throw std::runtime_error("binary_search() is not implemented yet.");
+    // }
+    // template <typename T> u32 lower_bound(const Array<T>& arr, const T& value)
+    // {
+    //     throw std::runtime_error("lower_bound() is not implemented yet.");
+    // }
+    // template <typename T> u32 upper_bound(const Array<T>& arr, const T& value)
+    // {
+    //     throw std::runtime_error("upper_bound() is not implemented yet.");
+    // }
     // template <typename T> void sort(Array<T>& arr, CompareFn compare)
     // {
     //     throw std::runtime_error("sort() with custom compare is not implemented yet.");

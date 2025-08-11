@@ -6,6 +6,7 @@
  */
 
 #include "aligned_string.hpp"
+#include "array.hpp"
 #include "queue.hpp"
 #include "stack.hpp"
 

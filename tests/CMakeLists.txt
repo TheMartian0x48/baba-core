@@ -23,9 +23,12 @@ set_target_properties(baba_core_tests PROPERTIES
 include(GoogleTest)
 gtest_discover_tests(baba_core_tests)
 
+# Add subdirectories following namespace structure
+add_subdirectory(ds)
+
 # Add custom target to build all tests
 add_custom_target(build_tests
-    DEPENDS baba_core_tests
+    DEPENDS baba_core_tests array_tests
     COMMENT "Building all tests"
 )
 
