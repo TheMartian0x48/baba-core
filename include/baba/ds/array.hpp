@@ -6,6 +6,7 @@
  * @brief Dynamic array implementation with arena allocation
  */
 
+#include "baba/memory/memory.hpp"
 #include <baba/alias.hpp>
 #include <baba/memory.hpp>
 #include <stdexcept>
@@ -16,19 +17,19 @@ namespace baba::ds::array
     using namespace baba::alias;
 
     /**
- * @brief Dynamic array with arena allocation
- * @tparam T Element type
- */
+    * @brief Dynamic array with arena allocation
+    * @tparam T Element type
+    */
     template <typename T> struct Array {
-        core::Arena* arena;    ///< Arena allocator (initialized by `make()`)
-        T*           data;     ///< Pointer to array data
-        u32          size;     ///< Current number of elements
-        u32          capacity; ///< Maximum number of elements
+        baba::memory::Arena* arena;    ///< Arena allocator (initialized by `make()`)
+        T*                   data;     ///< Pointer to array data
+        u32                  size;     ///< Current number of elements
+        u32                  capacity; ///< Maximum number of elements
 
         /**
-     * @brief Check if array is empty
-     * @return `true` if size is 0
-     */
+        * @brief Check if array is empty
+        * @return `true` if size is 0
+        */
         [[nodiscard]]
         constexpr bool empty() const noexcept
         {
@@ -36,9 +37,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get current array size
-     * @return Number of elements
-     */
+        * @brief Get current array size
+        * @return Number of elements
+        */
         [[nodiscard]]
         constexpr u32 get_size() const noexcept
         {
@@ -46,9 +47,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get array capacity
-     * @return Maximum number of elements
-     */
+        * @brief Get array capacity
+        * @return Maximum number of elements
+        */
         [[nodiscard]]
         constexpr u32 get_capacity() const noexcept
         {
@@ -56,9 +57,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get data pointer
-     * @return Pointer to array data
-     */
+        * @brief Get data pointer
+        * @return Pointer to array data
+        */
         [[nodiscard]]
         constexpr T* get_data() const noexcept
         {
@@ -66,10 +67,10 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get element at index (unsafe)
-     * @param index Element position
-     * @return Element at index
-     */
+        * @brief Get element at index (unsafe)
+        * @param index Element position
+        * @return Element at index
+        */
         [[nodiscard]]
         constexpr T at(u32 index) const noexcept
             requires PrimitiveComparable<T>
@@ -78,10 +79,10 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get element at index (unsafe)
-     * @param index Element position
-     * @return Element at index
-     */
+        * @brief Get element at index (unsafe)
+        * @param index Element position
+        * @return Element at index
+        */
         [[nodiscard]]
         constexpr T at(u32 index) const noexcept
             requires(!PrimitiveComparable<T>)
@@ -90,11 +91,11 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get element at index (safe)
-     * @param index Element position
-     * @return Element at index
-     * @throw `std::out_of_range` if index >= size
-     */
+        * @brief Get element at index (safe)
+        * @param index Element position
+        * @return Element at index
+        * @throw `std::out_of_range` if index >= size
+        */
         [[nodiscard]]
         constexpr T at_safe(u32 index) const
             requires PrimitiveComparable<T>
@@ -106,11 +107,11 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get element at index (safe)
-     * @param index Element position
-     * @return Element at index
-     * @throw `std::out_of_range` if index >= size
-     */
+        * @brief Get element at index (safe)
+        * @param index Element position
+        * @return Element at index
+        * @throw `std::out_of_range` if index >= size
+        */
         [[nodiscard]]
         constexpr T at_safe(u32 index) const
             requires(!PrimitiveComparable<T>)
@@ -122,9 +123,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Get first element (unsafe)
-     * @return First element
-     */
+        * @brief Get first element (unsafe)
+        * @return First element
+        */
         [[nodiscard]]
         constexpr T front() const noexcept
             requires PrimitiveComparable<T>
@@ -283,10 +284,10 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Update element at index (unsafe)
-     * @param at Index position
-     * @param value New value
-     */
+        * @brief Update element at index (unsafe)
+        * @param at Index position
+        * @param value New value
+        */
         constexpr void update(u32 at, const T value) noexcept
             requires PrimitiveComparable<T>
         {
@@ -294,11 +295,11 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Update element at index (safe)
-     * @param at Index position
-     * @param value New value
-     * @throw `std::out_of_range` if index >= size
-     */
+        * @brief Update element at index (safe)
+        * @param at Index position
+        * @param value New value
+        * @throw `std::out_of_range` if index >= size
+        */
         constexpr void update_safe(u32 at, const T value)
             requires PrimitiveComparable<T>
         {
@@ -309,10 +310,10 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Update element at index (unsafe)
-     * @param at Index position
-     * @param value Pointer to new value
-     */
+        * @brief Update element at index (unsafe)
+        * @param at Index position
+        * @param value Pointer to new value
+        */
         constexpr void update(u32 at, const T* value) noexcept
             requires(!PrimitiveComparable<T>)
         {
@@ -320,11 +321,11 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Update element at index (safe)
-     * @param at Index position
-     * @param value Pointer to new value
-     * @throw `std::out_of_range` if index >= size
-     */
+        * @brief Update element at index (safe)
+        * @param at Index position
+        * @param value Pointer to new value
+        * @throw `std::out_of_range` if index >= size
+        */
         constexpr void update_safe(u32 at, const T* value)
             requires(!PrimitiveComparable<T>)
         {
@@ -335,9 +336,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Remove element at index (unsafe)
-     * @param index Index to remove
-     */
+        * @brief Remove element at index (unsafe)
+        * @param index Index to remove
+        */
         constexpr void remove(u32 index) noexcept
         {
             // or just copy [index + 1, size) to [index, size - 1]
@@ -348,10 +349,10 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Remove element at index (safe)
-     * @param index Index to remove
-     * @throw `std::out_of_range` if index >= size
-     */
+        * @brief Remove element at index (safe)
+        * @param index Index to remove
+        * @throw `std::out_of_range` if index >= size
+        */
         constexpr void remove_safe(u32 index)
         {
             if (index >= size) {
@@ -365,9 +366,9 @@ namespace baba::ds::array
         }
 
         /**
-     * @brief Fill all elements with value
-     * @param value Value to fill with
-     */
+        * @brief Fill all elements with value
+        * @param value Value to fill with
+        */
         constexpr void fill(const T value) noexcept
             requires PrimitiveComparable<T>
         {
@@ -618,7 +619,7 @@ namespace baba::ds::array
             requires(!PrimitiveComparable<T>)
         {
             u32 upper_bound = size < other->size ? size : other->size;
-            for (u32 i = 0; i < size; ++i) {
+            for (u32 i = 0; i < upper_bound; ++i) {
                 int result = compare_fn(&data[i], &(other->data[i]));
                 if (result != 0) {
                     return result;
@@ -1011,43 +1012,116 @@ namespace baba::ds::array
     };
 
     /**
- * @brief Create array with given capacity
- * @tparam T Element type
- * @param arena Arena allocator
- * @param size Initial capacity
- * @return New array instance
- * @note Not implemented yet
- */
-    template <typename T> Array<T> make(core::Arena* arena, u32 size)
+    * @brief Create array with given capacity
+    * @tparam T Element type
+    * @param arena Arena allocator
+    * @param size Initial capacity
+    * @return New array instance
+    * @note Not implemented yet
+    */
+    template <typename T> Array<T> make(baba::memory::Arena* arena, u32 size)
     {
-        throw std::runtime_error("make() is not implemented yet.");
-    }
-
-    /**
- * @brief Destroy array and free memory
- * @tparam T Element type
- * @param size Array size (unused parameter)
- * @return Empty array instance
- * @note Not implemented yet
- */
-    template <typename T> Array<T> kill(u32 size)
-    {
-        throw std::runtime_error("kill() is not implemented yet.");
-    }
-
-    template <typename T> Array<T> copy(core::Arena* arena, const Array<T>& source)
-    {
-        throw std::runtime_error("kill() is not implemented yet.");
-    }
-
-    template <typename T> Array<T> merge(const Array<T>& a, const Array<T>& b, core::Arena* arena)
-    {
+        void* ptr = memory::arena_alloc(arena, size);
+        if (ptr == nullptr) {
+            return std::runtime_error("failed to allocate memory");
+        }
+        return Array<T>{
+            .arena    = arena,
+            .size     = size,
+            .capacity = size,
+            .data     = static_cast<T*>(ptr),
+        };
     }
 
     template <typename T>
-    void split(const Array<T>& arr, u32 index, Array<T>& left, Array<T>& right)
+    Array<T> make_with_capacity(baba::memory::Arena* arena, u32 size, u32 capacity)
     {
-        throw std::runtime_error("split() is not implemented yet.");
+        void* ptr = memory::arena_alloc(arena, capacity);
+        if (ptr == nullptr) {
+            return std::runtime_error("failed to allocate memory");
+        }
+        return Array<T>{
+            .arena    = arena,
+            .size     = size,
+            .capacity = capacity,
+            .data     = static_cast<T*>(ptr),
+        };
+    }
+
+    /**
+    * @brief Destroy array and free memory
+    * @tparam T Element type
+    * @param size Array size (unused parameter)
+    * @return Empty array instance
+    * @note Not implemented yet
+    */
+    template <typename T> void kill(const Array<T>* arr)
+    {
+        if (arr == nullptr)
+            return;
+        memory::arena_free(arr->arena, arr->data);
+    }
+
+    template <typename T> Array<T> copy(baba::memory::Arena* arena, const Array<T>* source)
+    {
+        void* ptr = memory::arena_alloc(source->size);
+        if (ptr == nullptr) {
+            return std::runtime_error("failed to allocate memory");
+        }
+        Array<T> arr = {
+            .size     = source->size,
+            .capacity = source->size,
+            .arena    = arena,
+            .data     = static_cast<T*>(ptr),
+        };
+        for (int i = 0; i < arr.size; i++) {
+            arr.data[i] = source->data[i];
+        }
+        return arr;
+    }
+
+    template <typename T>
+    Array<T> merge(baba::memory::Arena* arena, const Array<T>* a, const Array<T>* b)
+    {
+        u32   a_size{a->size}, b_size{b->size};
+        u32   size{a_size + b_size};
+        void* ptr{memory::arena_alloc(arena, size)};
+        if (ptr == nullptr) {
+            return std::runtime_error("failed to allocate memory");
+        }
+        Array<T> arr = {
+            .size     = size,
+            .capacity = size,
+            .arena    = arena,
+            .data     = static_cast<T*>(ptr),
+        };
+        for (u32 i = 0; i < a_size; i++) {
+            arr.data[i] = a->data[i];
+        }
+        for (u32 i = 0; i < b_size; i++) {
+            arr.data[i + b_size] = b->data[i];
+        }
+        return arr;
+    }
+
+    template <typename T>
+    void split(const Array<T>* arr, u32 index, Array<T>* left, Array<T>* right)
+    {
+        if (index > arr->size) {
+            std::out_of_range("index is out of range");
+        }
+        u32   size{arr->size};
+        void* ptr{memory::arena_alloc(arr->arena, size)};
+        if (ptr == nullptr) {
+            std::runtime_error("failed to allocate memory");
+        }
+        for (u32 i = 0; i < a_size; i++) {
+            arr.data[i] = a->data[i];
+        }
+        for (u32 i = 0; i < b_size; i++) {
+            arr.data[i + b_size] = b->data[i];
+        }
+        return arr;
     }
 
     template <typename T> void swap(Array<T>& a, Array<T>& b) noexcept

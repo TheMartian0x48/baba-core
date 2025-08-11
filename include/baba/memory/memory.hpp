@@ -116,16 +116,16 @@ namespace baba::memory
 
     namespace ArenaConstant
     {
-        inline const char* BUDDY_ARENA_TYPE        = "BUDDY";
-        inline const char* FREE_LIST_ARENA_TYPE    = "FREE";
-        inline const char* HYBRID_ARENA_TYPE       = "HYBRID";
-        inline const char* LINEAR_ARENA_TYPE       = "LINEAR";
-        inline const char* POOL_ARENA_TYPE         = "POOL";
-        inline const char* PROXY_ARENA_TYPE        = "PROXY";
-        inline const char* RING_BUFFER_ARENA_TYPE  = "RING";
-        inline const char* SLAB_ARENA_TYPE         = "SLAB";
-        inline const char* STACK_ARENA_TYPE        = "STACK";
-        inline const char* UNKNOWN_ARENA_TYPE      = "UNKNOWN";
+        inline const char*    BUDDY_ARENA_TYPE        = "BUDDY";
+        inline const char*    FREE_LIST_ARENA_TYPE    = "FREE";
+        inline const char*    HYBRID_ARENA_TYPE       = "HYBRID";
+        inline const char*    LINEAR_ARENA_TYPE       = "LINEAR";
+        inline const char*    POOL_ARENA_TYPE         = "POOL";
+        inline const char*    PROXY_ARENA_TYPE        = "PROXY";
+        inline const char*    RING_BUFFER_ARENA_TYPE  = "RING";
+        inline const char*    SLAB_ARENA_TYPE         = "SLAB";
+        inline const char*    STACK_ARENA_TYPE        = "STACK";
+        inline const char*    UNKNOWN_ARENA_TYPE      = "UNKNOWN";
         constexpr std::size_t STACK_ALLOC_START_MAGIC = 0xDEADBEEFCAFEBABE;
         constexpr std::size_t STACK_ALLOC_END_MAGIC   = 0xBABECAFEDEADBEEF;
         constexpr std::size_t FREED_MAGIC             = 0xDEADDEADDEADDEAD;
@@ -154,6 +154,7 @@ namespace baba::memory
         ArenaGetStatsFn     get_stats;     // Memory usage statistics
         ArenaCanAllocFn     can_alloc;     // Check if allocation possible
 
+        void*               instance;                 // instance of actual arena
         const char*         type_name;                // "linear", "stack", "pool", etc.
         std::size_t         min_alignment;            // Minimum alignment guarantee
         bool                supports_individual_free; // Can free individual allocations
@@ -253,6 +254,24 @@ namespace baba::memory
         std::size_t  total_allocations;
         std::size_t  total_frees;
     };
+    // ============================================================================
+    // ARENA FUNCTIONS
+    // =============================================================================
+    inline void* arena_alloc(Arena* arena, std::size_t size)
+    {
+        return arena->alloc(arena->instance, size);
+    }
+    inline void arena_free(Arena* arena, void* ptr) { arena->free(arena->instance, ptr); }
+    inline void arena_get_stats(Arena* arena, ArenaStats* stats)
+    {
+        arena->get_stats(arena->instance, stats);
+    }
+    inline bool arena_can_alloc(Arena* arena, std::size_t size)
+    {
+        return arena->can_alloc(arena->instance, size);
+    }
+    inline void arena_reset(Arena* arena) { arena->reset(arena->instance); }
+    inline void arena_destroy(Arena* arena) { arena->destroy(arena->instance); }
 
     // ============================================================================
     // PROXY ARENA
