@@ -36,6 +36,7 @@ namespace baba::memory
         constexpr std::size_t STACK_ALLOC_START_MAGIC = 0xDEADBEEFCAFEBABE;
         constexpr std::size_t STACK_ALLOC_END_MAGIC   = 0xBABECAFEDEADBEEF;
         constexpr std::size_t FREED_MAGIC             = 0xDEADDEADDEADDEAD;
+        constexpr std::size_t DEFAULT_ALIGNMENT       = 2 * sizeof(void*);
     } // namespace ArenaConstant
 
     enum class ArenaType {
@@ -121,7 +122,10 @@ namespace baba::memory
         }
         static void  reset([[maybe_unused]] void* arena_instance) {}
 
-        static void* alloc([[maybe_unused]] void* arena_instance, std::size_t size) { return std::malloc(size); }
+        static void* alloc([[maybe_unused]] void* arena_instance, std::size_t size, [[maybe_unused]] std::size_t alignment)
+        {
+            return std::malloc(size);
+        }
         static void  dealloc([[maybe_unused]] void* arena_instance, void* ptr) { std::free(ptr); }
         static void* realloc([[maybe_unused]] void* arena_instance, void* ptr, std::size_t size)
         {
@@ -182,7 +186,7 @@ namespace baba::memory
             std::free(arena);
         }
 
-        static void* alloc(void* arena_instance, std::size_t size)
+        static void* alloc(void* arena_instance, std::size_t size, [[maybe_unused]] std::size_t alignment)
         {
             auto arena = static_cast<LinearArena*>(arena_instance);
             if (arena->offset + size > arena->capacity) {
@@ -340,7 +344,7 @@ namespace baba::memory
     using ArenaResetFn    = void (*)(void* arena_instance);
     using ArenaKillFn     = void (*)(void* arena_instance);
 
-    using ArenaAllocFn    = void* (*)(void* arena_instance, std::size_t size);
+    using ArenaAllocFn    = void* (*)(void* arena_instance, std::size_t size, std::size_t alignment);
     using ArenaReallocFn  = void* (*)(void* arena_instance, void* ptr, std::size_t new_size);
     using ArenaDeallocFn  = void (*)(void* arena_instance, void* ptr);
 
@@ -405,13 +409,14 @@ namespace baba::memory
             arena->kill_fn(arena->instance);
             std::free(arena);
         }
-        inline void       reset() { reset_fn(instance); }
+        inline void  reset() { reset_fn(instance); }
 
-        inline void*      alloc(std::size_t size) { return alloc_fn(instance, size); }
-        inline void       dealloc(void* ptr) { dealloc_fn(instance, ptr); }
-        inline void*      realloc(void* ptr, std::size_t new_size) { return realloc_fn(instance, ptr, new_size); }
+        inline void* alloc(std::size_t size) { return aligned_alloc(instance, size, ArenaConstant::DEFAULT_ALIGNMENT); }
+        inline void* aligned_alloc(std::size_t size, std::size_t alignment) { return alloc_fn(instance, size, alignment); }
+        inline void  dealloc(void* ptr) { dealloc_fn(instance, ptr); }
+        inline void* realloc(void* ptr, std::size_t new_size) { return realloc_fn(instance, ptr, new_size); }
 
-        inline bool       can_alloc(std::size_t size) { return can_alloc_fn(instance, size); }
+        inline bool  can_alloc(std::size_t size) { return can_alloc_fn(instance, size); }
         inline ArenaStats get_stats() { return stats_fn(instance); }
     };
 } // namespace baba::memory
