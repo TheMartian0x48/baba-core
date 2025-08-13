@@ -9,7 +9,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 # BreakTemplateDeclarations: Yes
 BinPackParameters: OnePerLine
 BreakAfterAttributes: Always
-ColumnLimit: 100
+ColumnLimit: 125
 IndentWidth: 4
 PointerAlignment: Left
 ReflowComments: false
@@ -26,3 +26,4 @@ AlignConsecutiveAssignments:
   AcrossEmptyLines: true
 
 NamespaceIndentation: All
+PackConstructorInitializers: NextLineOnly

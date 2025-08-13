@@ -5,11 +5,11 @@
  * @brief Master header for the baba-core library
  */
 
+#include "alias.hpp"
 #include "core/core.hpp"
 #include "ds/ds.hpp"
 #include "logger.hpp"
 #include "memory.hpp"
-#include "alias.hpp"
 
 namespace baba
 {

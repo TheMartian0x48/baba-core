@@ -7,7 +7,6 @@
  */
 
 #include "baba/ds/pair.hpp"
-#include "baba/memory/memory.hpp"
 #include <baba/alias.hpp>
 #include <baba/memory.hpp>
 #include <stdexcept>
@@ -22,10 +21,10 @@ namespace baba::ds::array
     * @tparam T Element type
     */
     template <typename T> struct Array {
-        baba::memory::Arena* arena;    ///< Arena allocator (initialized by `make()`)
-        T*                   data;     ///< Pointer to array data
-        u32                  size;     ///< Current number of elements
-        u32                  capacity; ///< Maximum number of elements
+        memory::Arena* arena;    ///< Arena allocator (initialized by `make()`)
+        T*             data;     ///< Pointer to array data
+        u32            size;     ///< Current number of elements
+        u32            capacity; ///< Maximum number of elements
 
         /**
         * @brief Check if array is empty
@@ -1019,7 +1018,7 @@ namespace baba::ds::array
     */
     template <typename T> Array<T> make(baba::memory::Arena* arena, u32 size)
     {
-        void* ptr = memory::arena_alloc(arena, size * sizeof(T));
+        void* ptr = arena->alloc(size * sizeof(T));
         if (ptr == nullptr) {
             throw std::runtime_error("failed to allocate memory");
         }
@@ -1031,10 +1030,9 @@ namespace baba::ds::array
         };
     }
 
-    template <typename T>
-    Array<T> make_with_capacity(baba::memory::Arena* arena, u32 size, u32 capacity)
+    template <typename T> Array<T> make_with_capacity(baba::memory::Arena* arena, u32 size, u32 capacity)
     {
-        void* ptr = memory::arena_alloc(arena, capacity * sizeof(T));
+        void* ptr = arena->alloc(capacity * sizeof(T));
         if (ptr == nullptr) {
             throw std::runtime_error("failed to allocate memory");
         }
@@ -1053,16 +1051,19 @@ namespace baba::ds::array
     * @return Empty array instance
     * @note Not implemented yet
     */
-    template <typename T> void kill(const Array<T>* arr)
+    template <typename T> void kill(Array<T>* arr)
     {
         if (arr == nullptr)
             return;
-        memory::arena_free(arr->arena, arr->data);
+        arr->arena->dealloc(arr->data);
+        arr->data     = nullptr;
+        arr->size     = 0;
+        arr->capacity = 0;
     }
 
     template <typename T> Array<T> copy(baba::memory::Arena* arena, const Array<T>* source)
     {
-        void* ptr = memory::arena_alloc(arena, source->size * sizeof(T));
+        void* ptr = arena->alloc(source->size * sizeof(T));
         if (ptr == nullptr) {
             throw std::runtime_error("failed to allocate memory");
         }
@@ -1078,12 +1079,11 @@ namespace baba::ds::array
         return arr;
     }
 
-    template <typename T>
-    Array<T> merge(baba::memory::Arena* arena, const Array<T>* a, const Array<T>* b)
+    template <typename T> Array<T> merge(baba::memory::Arena* arena, const Array<T>* a, const Array<T>* b)
     {
         u32   a_size{a->size}, b_size{b->size};
         u32   size{a_size + b_size};
-        void* ptr{memory::arena_alloc(arena, size * sizeof(T))};
+        void* ptr{arena->alloc(size * sizeof(T))};
         if (ptr == nullptr) {
             throw std::runtime_error("failed to allocate memory");
         }
@@ -1109,11 +1109,11 @@ namespace baba::ds::array
         }
         u32  size{arr->size};
         u32  left_size{index + 1}, right_size{size - index - 1};
-        auto left_ptr  = static_cast<T*>(memory::arena_alloc(arr->arena, left_size * sizeof(T)));
-        auto right_ptr = static_cast<T*>(memory::arena_alloc(arr->arena, right_size * sizeof(T)));
+        auto left_ptr  = static_cast<T*>(arr->arena->alloc(left_size * sizeof(T)));
+        auto right_ptr = static_cast<T*>(arr->arena->alloc(right_size * sizeof(T)));
         if (left_ptr == nullptr || right_ptr == nullptr) {
-            memory::arena_free(arr->arena, left_ptr);
-            memory::arena_free(arr->arena, right_ptr);
+            arr->arena->dealloc(left_ptr);
+            arr->arena->dealloc(right_ptr);
             throw std::runtime_error("Failed to allocate memory");
         }
         Array<T> left = {

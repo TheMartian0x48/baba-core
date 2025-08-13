@@ -6,7 +6,6 @@
 
 namespace baba::alias
 {
-
     // unsigned integer number
     using u8  = uint8_t;
     using u16 = uint16_t;
@@ -46,12 +45,10 @@ namespace baba::alias
     concept SignedInteger64 = std::same_as<T, i64>;
 
     template <typename T>
-    concept SignedInteger =
-        SignedInteger8<T> || SignedInteger16<T> || SignedInteger32<T> || SignedInteger64<T>;
+    concept SignedInteger = SignedInteger8<T> || SignedInteger16<T> || SignedInteger32<T> || SignedInteger64<T>;
 
     template <typename T>
-    concept UnsignedInteger =
-        UnsignedInteger8<T> || UnsignedInteger16<T> || UnsignedInteger32<T> || UnsignedInteger64<T>;
+    concept UnsignedInteger = UnsignedInteger8<T> || UnsignedInteger16<T> || UnsignedInteger32<T> || UnsignedInteger64<T>;
 
     template <typename T>
     concept Integer = SignedInteger<T> || UnsignedInteger<T>;

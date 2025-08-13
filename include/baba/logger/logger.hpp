@@ -28,12 +28,10 @@ namespace baba::logger
     std::string log_level_to_string(LogLevel level);
 
     template <typename T>
-    concept MessageProvider =
-        std::invocable<T> && std::convertible_to<std::invoke_result_t<T>, std::string>;
+    concept MessageProvider = std::invocable<T> && std::convertible_to<std::invoke_result_t<T>, std::string>;
 
     template <typename T>
-    concept StringLike =
-        std::convertible_to<T, std::string> || std::convertible_to<T, std::string_view>;
+    concept StringLike = std::convertible_to<T, std::string> || std::convertible_to<T, std::string_view>;
 
     /// Logger configuration
     struct Logger {
@@ -59,73 +57,44 @@ namespace baba::logger
     template <MessageProvider T>
     void log(LogLevel level, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void trace(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void trace(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void debug(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void debug(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void info(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void info(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void warn(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void warn(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void error(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void error(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
-    template <MessageProvider T>
-    void fatal(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    template <MessageProvider T> void fatal(T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     // Custom logger functions
     template <MessageProvider T>
-    void logger_log(Logger* logger,
-        LogLevel            level,
-        T&&                 msg_provider,
-        const char*         file = __FILE__,
-        int                 line = __LINE__);
+    void logger_log(Logger* logger, LogLevel level, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void logger_trace(Logger* logger,
-        T&&                   msg_provider,
-        const char*           file = __FILE__,
-        int                   line = __LINE__);
+    void logger_trace(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void logger_debug(Logger* logger,
-        T&&                   msg_provider,
-        const char*           file = __FILE__,
-        int                   line = __LINE__);
+    void logger_debug(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void
-    logger_info(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    void logger_info(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void
-    logger_warn(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
+    void logger_warn(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void logger_error(Logger* logger,
-        T&&                   msg_provider,
-        const char*           file = __FILE__,
-        int                   line = __LINE__);
+    void logger_error(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     template <MessageProvider T>
-    void logger_fatal(Logger* logger,
-        T&&                   msg_provider,
-        const char*           file = __FILE__,
-        int                   line = __LINE__);
+    void logger_fatal(Logger* logger, T&& msg_provider, const char* file = __FILE__, int line = __LINE__);
 
     // Forward declaration for internal implementation
-    void internal_log_impl(const Logger* logger,
-        LogLevel                         level,
-        const std::string&               message,
-        const char*                      file,
-        int                              line);
+    void internal_log_impl(const Logger* logger, LogLevel level, const std::string& message, const char* file, int line);
 
-    template <MessageProvider T>
-    void log(LogLevel level, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void log(LogLevel level, T&& msg_provider, const char* file, int line)
     {
         // Get effective logger (global default if nullptr)
         extern Logger g_default_logger;
@@ -189,38 +158,32 @@ namespace baba::logger
         internal_log_impl(logger, level, message, file, line);
     }
 
-    template <MessageProvider T>
-    void logger_trace(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_trace(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::TRACE, std::forward<T>(msg_provider), file, line);
     }
 
-    template <MessageProvider T>
-    void logger_debug(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_debug(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::DEBUG, std::forward<T>(msg_provider), file, line);
     }
 
-    template <MessageProvider T>
-    void logger_info(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_info(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::INFO, std::forward<T>(msg_provider), file, line);
     }
 
-    template <MessageProvider T>
-    void logger_warn(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_warn(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::WARN, std::forward<T>(msg_provider), file, line);
     }
 
-    template <MessageProvider T>
-    void logger_error(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_error(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::ERROR, std::forward<T>(msg_provider), file, line);
     }
 
-    template <MessageProvider T>
-    void logger_fatal(Logger* logger, T&& msg_provider, const char* file, int line)
+    template <MessageProvider T> void logger_fatal(Logger* logger, T&& msg_provider, const char* file, int line)
     {
         logger_log(logger, LogLevel::FATAL, std::forward<T>(msg_provider), file, line);
     }
